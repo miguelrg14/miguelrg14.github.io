@@ -1,8 +1,8 @@
 # Miguel Rodríguez Gallego: personal site
 
-[![CI](https://github.com/miguelrg14/Personal-Web-Page_Miguelrg14/actions/workflows/ci.yml/badge.svg)](https://github.com/miguelrg14/Personal-Web-Page_Miguelrg14/actions/workflows/ci.yml)
+[![CI](https://github.com/miguelrg14/miguelrg14.github.io/actions/workflows/ci.yml/badge.svg)](https://github.com/miguelrg14/miguelrg14.github.io/actions/workflows/ci.yml)
 
-**▶ [miguelrg14.github.io/Personal-Web-Page_Miguelrg14](https://miguelrg14.github.io/Personal-Web-Page_Miguelrg14/)**
+**▶ [miguelrg14.github.io](https://miguelrg14.github.io/)**
 
 My portfolio and link page: games, code repositories, art and music, all in one place.
 It's plain HTML, CSS and JavaScript with no build step, published by GitHub Pages straight from `main`.
