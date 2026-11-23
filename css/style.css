@@ -346,6 +346,11 @@ main {
     border-color: var(--sky);
 }
 
+/* "My games" takes a whole row, so the other links fill even rows below it. */
+.links .primary {
+    grid-column: 1 / -1;
+}
+
 .links .primary a {
     background: var(--butter);
     border-color: #f2dc86;
