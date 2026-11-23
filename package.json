@@ -1,0 +1,12 @@
+{
+  "name": "personal-web-page-miguelrg14",
+  "private": true,
+  "description": "Personal site of Miguel Rodríguez Gallego, published with GitHub Pages.",
+  "scripts": {
+    "validate": "html-validate \"**/*.html\"",
+    "start": "npx --yes http-server -c-1 -p 8080 ."
+  },
+  "devDependencies": {
+    "html-validate": "^9.0.0"
+  }
+}

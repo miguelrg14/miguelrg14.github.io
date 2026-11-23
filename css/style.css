@@ -1,0 +1,864 @@
+/*
+ * Miguel Rodríguez Gallego: personal site.
+ * Look: printed ultramarine ink with a fluorescent pink overprint, like a risograph zine.
+ */
+
+@font-face {
+    font-family: "Bricolage Grotesque";
+    src: url("../assets/fonts/bricolage-grotesque.woff2") format("woff2-variations");
+    font-weight: 200 800;
+    font-stretch: 75% 100%;
+    font-display: swap;
+}
+
+:root {
+    --ultra: #1f2fd1;       /* page: ultramarine ink */
+    --ultra-deep: #1421a3;  /* panels, shadows */
+    --ultra-ink: #0b146e;   /* text on light fills */
+    --sky: #9fdcff;         /* secondary text, tags */
+    --paper: #f3f6ff;       /* main text */
+    --pink: #ff5fa8;        /* overprint accent: name, focus, hover offsets */
+    --sun: #ffd84a;         /* links and primary buttons */
+
+    --font: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+    --step--1: 0.875rem;
+    --step-0: 1.0625rem;
+    --step-1: 1.375rem;
+    --step-2: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+    --step-3: clamp(2.5rem, 1.6rem + 4vw, 4.5rem);
+    --step-hero: clamp(3.6rem, 1rem + 11vw, 11rem);
+
+    --wrap: 76rem;
+    --gutter: clamp(1.25rem, 4vw, 3rem);
+    --radius: 6px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--ultra);
+    color: var(--paper);
+    font-family: var(--font);
+    font-size: var(--step-0);
+    font-variation-settings: "opsz" 14;
+    line-height: 1.6;
+}
+
+/* Print grain over everything, so the flat blue reads as ink on paper. */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.16;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+img,
+video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+a {
+    color: var(--sun);
+    text-underline-offset: 0.18em;
+}
+
+a:hover {
+    text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+    outline: 3px solid var(--pink);
+    outline-offset: 3px;
+}
+
+h1,
+h2,
+h3 {
+    margin: 0 0 0.5em;
+    font-weight: 800;
+    font-stretch: 80%;
+    font-variation-settings: "opsz" 96;
+    line-height: 1;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+}
+
+h1 {
+    font-size: var(--step-3);
+}
+
+h2 {
+    font-size: var(--step-2);
+}
+
+h3 {
+    font-size: var(--step-1);
+    font-stretch: 90%;
+}
+
+p {
+    margin: 0 0 1em;
+    max-width: 68ch;
+}
+
+.skip {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    padding: 0.5rem 1rem;
+    background: var(--sun);
+    color: var(--ultra-ink);
+    z-index: 200;
+}
+
+.skip:focus {
+    top: 1rem;
+}
+
+.icon {
+    width: 1.25em;
+    height: 1.25em;
+    fill: currentColor;
+    flex: none;
+}
+
+/* ---------- Header and footer ---------- */
+
+.site-header,
+main,
+.site-footer {
+    width: min(100% - 2 * var(--gutter), var(--wrap));
+    margin-inline: auto;
+}
+
+.site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 2rem;
+    padding-block: 1.25rem;
+}
+
+.brand {
+    color: var(--paper);
+    font-weight: 800;
+    font-stretch: 75%;
+    font-size: var(--step-1);
+    text-decoration: none;
+    line-height: 1;
+}
+
+.site-nav {
+    margin-left: auto;
+}
+
+.site-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.site-nav a {
+    display: block;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    color: var(--paper);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.site-nav a:hover {
+    background: var(--ultra-deep);
+}
+
+.site-nav a[aria-current="page"] {
+    background: var(--paper);
+    color: var(--ultra-ink);
+}
+
+main {
+    flex: 1;
+    padding-block: 2rem 5rem;
+}
+
+.site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 2rem 2.5rem;
+    border-top: 2px solid var(--ultra-deep);
+    color: var(--sky);
+    font-size: var(--step--1);
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+/* ---------- Buttons, tags ---------- */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.6em 1.1em;
+    border: 2px solid var(--sun);
+    border-radius: 999px;
+    background: var(--sun);
+    color: var(--ultra-ink);
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.button:hover {
+    background: var(--paper);
+    border-color: var(--paper);
+}
+
+.button.ghost {
+    background: transparent;
+    color: var(--paper);
+    border-color: rgb(243 246 255 / 0.45);
+}
+
+.button.ghost:hover {
+    border-color: var(--paper);
+    background: var(--ultra-deep);
+}
+
+.button.small {
+    font-size: var(--step--1);
+    padding: 0.45em 0.9em;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+}
+
+.tags li {
+    padding: 0.1em 0.6em;
+    border: 1.5px solid rgb(159 220 255 / 0.5);
+    border-radius: 999px;
+    color: var(--sky);
+    font-size: var(--step--1);
+}
+
+.meta {
+    margin: 0 0 0.75rem;
+    color: var(--sky);
+    font-size: var(--step--1);
+}
+
+.lead {
+    font-size: var(--step-1);
+    line-height: 1.4;
+    max-width: 40ch;
+}
+
+/* ---------- Home: hero ---------- */
+
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 2rem var(--gutter);
+    padding-block: clamp(1rem, 4vw, 3rem) 3rem;
+}
+
+/* The one loud thing on the site: the name, printed twice slightly out of register. */
+.hero-name {
+    margin: 0 0 1.5rem;
+    font-size: var(--step-hero);
+    font-weight: 800;
+    font-stretch: 75%;
+    line-height: 0.84;
+    letter-spacing: -0.035em;
+    color: var(--paper);
+    text-shadow: 0.045em 0.04em 0 var(--pink);
+    text-wrap: initial;
+}
+
+.hero-name span {
+    display: block;
+}
+
+.hero-photo {
+    position: relative;
+    margin: 0;
+    transform: rotate(2.5deg);
+}
+
+.hero-photo img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius);
+    box-shadow: -14px 14px 0 var(--pink);
+}
+
+/* ---------- Home: link list (replaces the old Linktree) ---------- */
+
+.links {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin: 0 0 4.5rem;
+    padding: 0;
+    list-style: none;
+}
+
+.links a {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.9rem 1.1rem;
+    border: 2px solid rgb(243 246 255 / 0.3);
+    border-radius: var(--radius);
+    color: var(--paper);
+    font-weight: 700;
+    font-size: var(--step-1);
+    font-stretch: 85%;
+    line-height: 1.1;
+    text-decoration: none;
+}
+
+.links a small {
+    display: block;
+    color: var(--sky);
+    font-size: var(--step--1);
+    font-weight: 400;
+    font-stretch: 100%;
+}
+
+.links a:hover {
+    background: var(--sun);
+    border-color: var(--sun);
+    color: var(--ultra-ink);
+}
+
+.links a:hover small {
+    color: var(--ultra-ink);
+}
+
+.links .primary a {
+    background: var(--paper);
+    border-color: var(--paper);
+    color: var(--ultra-ink);
+}
+
+.links .primary small {
+    color: var(--ultra-deep);
+}
+
+.section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.section-head h2 {
+    margin: 0;
+}
+
+.section-head p {
+    margin: 0;
+}
+
+section + section {
+    margin-top: 4.5rem;
+}
+
+/* ---------- Project cards (home, Code page) ---------- */
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: 1.75rem 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+}
+
+.media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--ultra-deep);
+}
+
+.media img,
+.media video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media.contain img {
+    object-fit: contain;
+}
+
+.media video {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.media.playing video {
+    opacity: 1;
+}
+
+.card:hover .media,
+.card:focus-within .media,
+.game:hover .media,
+.game:focus-within .media {
+    box-shadow: 8px 8px 0 var(--pink);
+}
+
+.media {
+    transition: box-shadow 0.15s;
+}
+
+.card h3 {
+    margin-bottom: 0.25rem;
+}
+
+.card p {
+    font-size: 1rem;
+}
+
+.card .actions {
+    margin-top: auto;
+}
+
+/* ---------- Games page ---------- */
+
+.game {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 1.5rem var(--gutter);
+    margin: 0;
+}
+
+.game + .game {
+    margin-top: 4.5rem;
+}
+
+.game:nth-child(even) .media {
+    order: 2;
+}
+
+.game .media {
+    margin: 0;
+}
+
+.game h2 {
+    margin-bottom: 0.35rem;
+}
+
+.role {
+    margin: 0 0 1rem;
+    padding-left: 0.85rem;
+    border-left: 4px solid var(--pink);
+    font-weight: 600;
+}
+
+/* ---------- Code page ---------- */
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0 0 3rem;
+    padding: 0;
+    border: 0;
+}
+
+.filters legend {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    color: var(--sky);
+}
+
+.filters button {
+    padding: 0.35em 0.9em;
+    border: 2px solid rgb(243 246 255 / 0.35);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--paper);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.filters button:hover {
+    border-color: var(--paper);
+}
+
+.filters button[aria-pressed="true"] {
+    background: var(--sun);
+    border-color: var(--sun);
+    color: var(--ultra-ink);
+}
+
+.group[hidden] {
+    display: none;
+}
+
+.group-intro {
+    color: var(--sky);
+    margin-bottom: 1.5rem;
+}
+
+.empty {
+    color: var(--sky);
+}
+
+/* ---------- Art page ---------- */
+
+.gallery {
+    columns: 3 18rem;
+    column-gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gallery li {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+}
+
+.gallery button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--ultra-deep);
+    cursor: zoom-in;
+    transition: box-shadow 0.15s;
+}
+
+.gallery button:hover {
+    box-shadow: 8px 8px 0 var(--pink);
+}
+
+.gallery img {
+    width: 100%;
+    border-radius: var(--radius);
+}
+
+.pixel img {
+    image-rendering: pixelated;
+}
+
+.gallery figcaption {
+    padding-top: 0.6rem;
+    font-size: 1rem;
+}
+
+.gallery figcaption strong {
+    display: block;
+    font-stretch: 85%;
+    font-size: var(--step-1);
+    line-height: 1.2;
+}
+
+.gallery figure {
+    margin: 0;
+}
+
+.lightbox {
+    max-width: min(94vw, 80rem);
+    max-height: 94vh;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--ultra-deep);
+    color: var(--paper);
+}
+
+.lightbox::backdrop {
+    background: rgb(11 20 110 / 0.85);
+}
+
+.lightbox img {
+    max-height: calc(94vh - 4.5rem);
+    margin-inline: auto;
+}
+
+.lightbox-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+}
+
+.lightbox-bar p {
+    margin: 0;
+}
+
+/* ---------- Music page ---------- */
+
+.tracks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 1.5rem;
+}
+
+.track {
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    background: var(--ultra-deep);
+}
+
+.track video,
+.track > img {
+    width: 100%;
+    margin-bottom: 1rem;
+    border-radius: calc(var(--radius) - 2px);
+}
+
+.track audio {
+    width: 100%;
+}
+
+.credits {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.credits li {
+    display: grid;
+    grid-template-columns: minmax(9rem, 14rem) 1fr;
+    gap: 0.25rem 2rem;
+    padding-block: 1rem;
+    border-top: 2px solid var(--ultra-deep);
+}
+
+.credits li:last-child {
+    border-bottom: 2px solid var(--ultra-deep);
+}
+
+.credits strong {
+    font-stretch: 85%;
+    font-size: var(--step-1);
+    line-height: 1.2;
+}
+
+.credits p {
+    margin: 0;
+}
+
+.pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1.25rem;
+}
+
+.pair img {
+    width: 100%;
+    border-radius: var(--radius);
+}
+
+/* ---------- About and contact ---------- */
+
+.split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 2rem var(--gutter);
+    align-items: start;
+}
+
+.split .links {
+    grid-template-columns: 1fr;
+    margin: 0;
+}
+
+.split img {
+    border-radius: var(--radius);
+}
+
+.form {
+    display: grid;
+    gap: 1rem;
+    max-width: 36rem;
+}
+
+.form label {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 600;
+}
+
+.form input,
+.form textarea {
+    width: 100%;
+    padding: 0.75rem 0.9rem;
+    border: 2px solid rgb(243 246 255 / 0.35);
+    border-radius: var(--radius);
+    background: var(--ultra-deep);
+    color: var(--paper);
+    font: inherit;
+    font-weight: 400;
+}
+
+.form textarea {
+    min-height: 10rem;
+    resize: vertical;
+}
+
+.form input:focus,
+.form textarea:focus {
+    border-color: var(--sun);
+    outline: none;
+}
+
+.form .button {
+    justify-self: start;
+}
+
+.form-note {
+    color: var(--sky);
+    font-size: var(--step--1);
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 52rem) {
+    .hero,
+    .game,
+    .split {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        padding-bottom: 2rem;
+    }
+
+    .hero-photo {
+        max-width: 9rem;
+        order: -1;
+    }
+
+    .hero-photo img {
+        box-shadow: -8px 8px 0 var(--pink);
+    }
+
+    .links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .split .links {
+        grid-template-columns: 1fr;
+    }
+
+    .game:nth-child(even) .media {
+        order: 0;
+    }
+
+    .site-nav {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .credits li {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 34rem) {
+    .links {
+        grid-template-columns: 1fr;
+    }
+
+    .links a {
+        padding: 0.7rem 1rem;
+        font-size: var(--step-0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition: none !important;
+    }
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.lightbox .pixel-img {
+    image-rendering: pixelated;
+}
+
+.more {
+    margin-top: 1.5rem;
+}
