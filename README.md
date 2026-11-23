@@ -42,7 +42,7 @@ CI validates the HTML and checks that every local link and asset exists.
 
 ## Credits
 
-- Typeface: [Bricolage Grotesque](https://github.com/ateliertriay/bricolage) (SIL Open Font License, see
+- Typeface: [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License, see
   [`assets/fonts/OFL.txt`](assets/fonts/OFL.txt)), served from the site itself.
 - Brand icons: [Simple Icons](https://simpleicons.org) (CC0).
 - Screenshots and clips come from the repositories of each project.
