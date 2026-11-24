@@ -22,40 +22,42 @@
 <body>
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-header">
-        <a class="brand" href="./">Miguel Rodríguez</a>
-        <nav class="site-nav" aria-label="Main">
-            <ul>
-                <li><a href="games/">Games</a></li>
-                <li><a href="code/">Code</a></li>
-                <li><a href="art/">Art</a></li>
-                <li><a href="music/">Music</a></li>
-                <li><a href="contact/">Contact</a></li>
-            </ul>
-        </nav>
+        <div class="bar">
+            <a class="brand" href="./">Miguel <span>Rodríguez</span></a>
+            <nav class="site-nav" aria-label="Main">
+                <ul>
+                    <li><a href="games/">Games</a></li>
+                    <li><a href="code/">Code</a></li>
+                    <li><a href="art/">Art</a></li>
+                    <li><a href="music/">Music</a></li>
+                </ul>
+            </nav>
+            <a class="button small" href="contact/">Contact</a>
+        </div>
     </header>
 
     <main id="main">
-        <section class="hero" aria-label="Introduction">
+        <section class="intro" aria-labelledby="title">
+            <img class="portrait" src="assets/img/portrait.webp" alt="Miguel sitting on a wall above the coast of Positano" width="800" height="800">
             <div>
-                <h1 class="hero-name">Miguel Rodríguez Gallego</h1>
+                <h1 id="title">Hi, I'm Miguel Rodríguez Gallego!</h1>
                 <p class="lead">Game developer from Vigo. I make games in Unity and C#, and the art, code and music that go into them.</p>
+                <p class="actions">
+                    <a class="button" href="games/"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#play"></use></svg>See my games</a>
+                    <a class="button ghost" href="contact/">Contact me</a>
+                </p>
+                <nav aria-label="Find me elsewhere">
+                <ul class="social">
+                    <li><a href="https://github.com/miguelrg14" title="GitHub"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#github"></use></svg><span class="visually-hidden">GitHub</span></a></li>
+                    <li><a href="https://www.linkedin.com/in/miguel-rodr%C3%ADguez-gallego-0a4599239/" title="LinkedIn"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#linkedin"></use></svg><span class="visually-hidden">LinkedIn</span></a></li>
+                    <li><a href="https://miguel-rg14.itch.io/" title="itch.io"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#itch"></use></svg><span class="visually-hidden">itch.io</span></a></li>
+                    <li><a href="https://www.artstation.com/miguel_rg14" title="ArtStation"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#artstation"></use></svg><span class="visually-hidden">ArtStation</span></a></li>
+                    <li><a href="https://soundcloud.com/user-448134376" title="SoundCloud"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#soundcloud"></use></svg><span class="visually-hidden">SoundCloud</span></a></li>
+                    <li><a href="mailto:miguelrodriguezgallego1@gmail.com" title="Email"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mail"></use></svg><span class="visually-hidden">Email</span></a></li>
+                </ul>
+                </nav>
             </div>
-            <figure class="hero-photo">
-                <img src="assets/img/portrait.webp" alt="Miguel sitting on a wall above the coast of Positano" width="800" height="800">
-            </figure>
         </section>
-
-        <nav aria-label="Find me elsewhere">
-            <ul class="links">
-            <li class="primary"><a href="games/"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#play"></use></svg><span>My games<small>Play them in the browser</small></span></a></li>
-            <li><a href="https://github.com/miguelrg14"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#github"></use></svg><span>GitHub<small>Code and repositories</small></span></a></li>
-            <li><a href="https://www.linkedin.com/in/miguel-rodr%C3%ADguez-gallego-0a4599239/"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#linkedin"></use></svg><span>LinkedIn<small>Experience and studies</small></span></a></li>
-            <li><a href="https://miguel-rg14.itch.io/"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#itch"></use></svg><span>itch.io<small>Builds to download</small></span></a></li>
-            <li><a href="https://www.artstation.com/miguel_rg14"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#artstation"></use></svg><span>ArtStation<small>Art portfolio</small></span></a></li>
-            <li><a href="https://soundcloud.com/user-448134376"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#soundcloud"></use></svg><span>SoundCloud<small>My music</small></span></a></li>
-            <li><a href="mailto:miguelrodriguezgallego1@gmail.com"><svg class="icon" aria-hidden="true"><use href="assets/icons.svg#mail"></use></svg><span>Email<small>miguelrodriguezgallego1@gmail.com</small></span></a></li>
-            </ul>
-        </nav>
 
         <section aria-labelledby="featured">
             <div class="section-head">

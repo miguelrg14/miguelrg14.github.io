@@ -77,8 +77,10 @@ document.querySelectorAll("[data-code]").forEach((box) => {
         const items = window.PROJECTS.filter((p) => (g.id === "games" ? p.kind === "game" : p.group === g.id));
         if (!items.length) return "";
         return `<section class="group" aria-labelledby="group-${g.id}">
-            <h2 id="group-${g.id}">${esc(g.title)}</h2>
-            <p class="group-intro">${esc(g.intro)}</p>
+            <div>
+                <h2 id="group-${g.id}">${esc(g.title)}</h2>
+                <p class="group-intro">${esc(g.intro)}</p>
+            </div>
             <ul class="cards">${items.map(card).join("")}</ul>
         </section>`;
     });
