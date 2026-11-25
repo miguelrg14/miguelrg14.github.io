@@ -666,6 +666,24 @@ section + section {
 
 /* ---------- Code page ---------- */
 
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 0 0 1.5rem;
+}
+
+.filter-bar .group-tabs {
+    flex: 1 1 auto;
+    margin: 0;
+}
+
+.filter-bar .tag-filters {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
 .group-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -713,8 +731,9 @@ section + section {
 }
 
 .tag-filters {
+    position: relative;
     margin: 0 0 1.5rem;
-    padding: 0.55rem 0.8rem;
+    padding: 0.8rem;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
@@ -725,11 +744,28 @@ section + section {
     align-items: center;
     gap: 0.4rem;
     width: fit-content;
-    color: var(--muted);
-    font-size: 0.85rem;
+    padding: 0.45em 0.9em;
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.88rem;
     font-weight: 700;
+    line-height: 1.2;
     cursor: pointer;
     list-style: none;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.tag-filters > summary:hover {
+    border-color: var(--sky);
+    background: var(--sky-soft);
+    transform: translateY(-1px);
+}
+
+.tag-filters[open] > summary {
+    border-color: var(--sky);
+    background: var(--sky);
 }
 
 .tag-filters > summary::-webkit-details-marker {
@@ -742,20 +778,39 @@ section + section {
     transition: transform 0.15s;
 }
 
-.tag-filters[open] > summary {
-    margin-bottom: 0.75rem;
+.tag-filters[open] {
+    z-index: 5;
 }
 
 .tag-filters[open] > summary::after {
     transform: rotate(180deg);
 }
 
+.tag-filters[open] .filters {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 5;
+    width: max-content;
+    min-width: 18rem;
+    max-width: min(90vw, 26rem);
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 10px 24px rgb(23 48 79 / 0.18);
+}
+
 .tag-filters [data-filter-status] {
-    padding: 0.1em 0.5em;
+    padding: 0 0.5em;
     border-radius: 999px;
     background: var(--sky-soft);
     color: var(--text);
     font-weight: 700;
+}
+
+.tag-filters[open] [data-filter-status] {
+    background: var(--surface);
 }
 
 .tag-filters .filters {
@@ -1169,6 +1224,11 @@ section + section {
 .form-note {
     color: var(--muted);
     font-size: var(--step--1);
+}
+
+.form-note.is-error {
+    color: var(--text);
+    font-weight: 700;
 }
 
 /* ---------- Small screens ---------- */

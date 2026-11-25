@@ -129,6 +129,19 @@ if (codeBox) {
     });
 
     const filterStatus = document.querySelector("[data-filter-status]");
+    const tagFilters = document.querySelector(".tag-filters");
+    const tagPanel = tagFilters?.querySelector(".filters");
+    const keepTagPanelInView = () => {
+        if (!tagPanel) return;
+        tagPanel.style.transform = "";
+        if (!tagFilters.open) return;
+        const box = tagPanel.getBoundingClientRect();
+        const shift = box.left < 8 ? 8 - box.left : box.right > innerWidth - 8 ? innerWidth - 8 - box.right : 0;
+        if (shift) tagPanel.style.transform = `translateX(${shift}px)`;
+    };
+    tagFilters?.addEventListener("toggle", () => requestAnimationFrame(keepTagPanelInView));
+    window.addEventListener("resize", keepTagPanelInView);
+
     document.querySelectorAll(".filters").forEach((filters) => {
         filters.addEventListener("click", (event) => {
             const button = event.target.closest("button[data-tag]");
@@ -266,15 +279,48 @@ if (lightbox) {
     });
 }
 
-// Contact form: the site is static, so it opens the visitor's email app with the message written.
+// Contact form: copy the message so it works without an email app installed.
 const form = document.getElementById("contact-form");
 if (form) {
+    const formStatus = form.querySelector("[data-form-status]");
+    const copyWithFallback = (text) => {
+        const field = document.createElement("textarea");
+        field.value = text;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        const copied = document.execCommand("copy");
+        field.remove();
+        return copied;
+    };
+    const report = (copied) => {
+        formStatus.textContent = copied
+            ? "Message copied and your email app is opening. If it doesn't open, paste it into an email to miguelrodriguezgallego1@gmail.com."
+            : "Your email app is opening. If it doesn't open, your message is selected: press Ctrl+C and paste it into an email to miguelrodriguezgallego1@gmail.com.";
+        formStatus.classList.toggle("is-error", !copied);
+        if (!copied) {
+            form.elements.message.focus();
+            form.elements.message.select();
+        }
+    };
     form.addEventListener("submit", (event) => {
         event.preventDefault();
         const name = form.elements.name.value.trim();
         const message = form.elements.message.value.trim();
+        const text = `Message from ${name}\n\n${message}`;
         const subject = encodeURIComponent(`Message from ${name}`);
-        const body = encodeURIComponent(`${message}\n\n${name}`);
-        window.location.href = `mailto:miguelrodriguezgallego1@gmail.com?subject=${subject}&body=${body}`;
+        const body = encodeURIComponent(text);
+        const copyDone = navigator.clipboard?.writeText
+            ? navigator.clipboard.writeText(text).then(() => true, () => copyWithFallback(text))
+            : Promise.resolve(copyWithFallback(text));
+        const emailLink = document.createElement("a");
+        emailLink.href = `mailto:miguelrodriguezgallego1@gmail.com?subject=${subject}&body=${body}`;
+        emailLink.hidden = true;
+        document.body.appendChild(emailLink);
+        emailLink.click();
+        emailLink.remove();
+        copyDone.then(report);
     });
 }
