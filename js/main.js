@@ -1,5 +1,6 @@
-// Renders the projects from data/projects.js, plays card previews on hover,
-// filters the Code page and opens the Art lightbox and the project details dialog.
+// Renders the projects from data/projects.js and the README images from
+// data/project-media.js, plays card previews on hover, filters the Code page
+// and opens the Art lightbox and the project details dialog.
 
 const root = document.documentElement.dataset.root || "";
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -9,12 +10,38 @@ const esc = (text) =>
 
 const asset = (path) => (/^https?:/.test(path) ? path : root + path);
 
+const tagLabels = {
+    "c#": "C#", "c++": "C++", ".net": ".NET", "ai": "AI", "ui": "UI",
+    "fps": "FPS", "urp": "URP", "webgl": "WebGL", "3d": "3D"
+};
+const tagLabel = (tag) => tagLabels[tag] || tag.replace(/\b\w/g, (c) => c.toUpperCase());
+
+function keepTagPanelInView(tagFilters) {
+    const panel = tagFilters?.querySelector(".filters");
+    if (!panel) return;
+    const shift = () => {
+        panel.style.transform = "";
+        if (!tagFilters.open) return;
+        const box = panel.getBoundingClientRect();
+        const delta = box.left < 8 ? 8 - box.left : box.right > innerWidth - 8 ? innerWidth - 8 - box.right : 0;
+        if (delta) panel.style.transform = `translateX(${delta}px)`;
+    };
+    tagFilters.addEventListener("toggle", () => requestAnimationFrame(shift));
+    window.addEventListener("resize", shift);
+}
+
 function mediaItems(p) {
     const items = [];
     if (p.image) items.push({ kind: "image", src: asset(p.image), alt: p.alt || p.title });
     const video = p.video || p.coverVideo;
     if (video) items.push({ kind: "video", src: asset(video), alt: `Video preview of ${p.title}` });
     if (p.extra) items.push({ kind: "image", src: asset(p.extra), alt: `Another view of ${p.title}` });
+    const readme = (window.PROJECT_MEDIA && window.PROJECT_MEDIA[p.id]) || [];
+    for (const item of readme) {
+        const src = asset(item.src);
+        if (items.some((existing) => existing.src === src)) continue;
+        items.push({ kind: "image", src, alt: item.alt || `Another view of ${p.title}` });
+    }
     return items;
 }
 
@@ -26,14 +53,15 @@ function media(p, dialog = false, index = 0) {
         if (item.kind === "video") {
             return `<video data-media-slide${hidden} data-src="${esc(item.src)}" muted loop playsinline${dialog ? " controls" : ""} preload="none" aria-label="${esc(item.alt)}"></video>`;
         }
-        return `<img data-media-slide${hidden} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" width="1200" height="750">`;
+        const zoomable = dialog && item.kind === "image";
+        return `<img data-media-slide${hidden}${zoomable ? ` data-media-open role="button" tabindex="-1" aria-label="Enlarge image: ${esc(item.alt || p.title)}"` : ""} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" width="1200" height="750">`;
     }).join("");
-    const controls = items.length < 2 ? "" : `
+    const controls = `${items.length < 2 ? "" : `
         <button type="button" class="media-arrow media-prev" data-media-step="-1" aria-label="Previous media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
         <button type="button" class="media-arrow media-next" data-media-step="1" aria-label="Next media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
-        <span class="media-count" aria-live="polite">${index + 1} / ${items.length}</span>`;
-    return `<div class="media${dialog ? " dialog-media" : ""}${p.contain ? " contain" : ""}" data-media-carousel data-media-index="${index}" style="--cover: url('${esc(asset(items[0].src))}')">
-        <span class="media-backdrop" aria-hidden="true"></span>
+        <span class="media-count" aria-live="polite">${index + 1} / ${items.length}</span>`}`;
+    return `<div class="media${dialog ? " dialog-media" : ""}${p.contain ? " contain" : ""}" data-media-carousel data-media-index="${index}" style="--cover: url('${esc(items[0].src)}')">
+        <span class="media-backdrop" style="background-image: url('${esc(items[0].src)}')" aria-hidden="true"></span>
         ${slides}${controls}
     </div>`;
 }
@@ -72,7 +100,8 @@ function card(p) {
 }
 
 function gameRow(p) {
-    return `<article class="game" id="${esc(p.id)}" data-project="${esc(p.id)}" data-item>
+    const search = p.tags.map((t) => t.toLowerCase());
+    return `<article class="game" id="${esc(p.id)}" data-project="${esc(p.id)}" data-item data-tags="${esc(JSON.stringify(search))}">
         ${media(p)}
         <div class="game-body">
             <h2>${esc(p.title)}</h2>
@@ -127,7 +156,7 @@ document.querySelectorAll("[data-games]").forEach((box) => {
             </div>
             <div class="games">${items.map(gameRow).join("")}</div>
         </section>`;
-    }).join("");
+    }).join("") + `<p class="empty" hidden>Nothing with that combination yet.</p>`;
 });
 
 // Audio page: small square covers, a preview button and the same group filters.
@@ -185,7 +214,8 @@ const codeBox = document.querySelector("[data-code]");
 if (codeBox) {
     const [gamesGroup, ...otherGroups] = window.PROJECT_GROUPS;
     const orderedGroups = [...otherGroups, gamesGroup];
-    const projectsIn = (g) => window.PROJECTS.filter((p) => (g.id === "games" ? p.kind === "game" : p.group === g.id));
+    const projectGroups = (p) => p.groups || (p.group ? [p.group] : []);
+    const projectsIn = (g) => window.PROJECTS.filter((p) => (g.id === "games" ? p.kind === "game" : projectGroups(p).includes(g.id)));
 
     codeBox.innerHTML = orderedGroups.map((g) => {
         const items = projectsIn(g);
@@ -201,7 +231,7 @@ if (codeBox) {
 
     const tabs = document.querySelector("[data-group-tabs]");
     if (tabs) {
-        const options = [{ id: "all", title: "All", count: window.PROJECTS.length },
+        const options = [{ id: "all", title: "All", count: orderedGroups.reduce((sum, g) => sum + projectsIn(g).length, 0) },
             ...orderedGroups.map((g) => ({ id: g.id, title: g.title, count: projectsIn(g).length }))];
         tabs.innerHTML = options.map((g) => `<button type="button" data-group="${esc(g.id)}" aria-pressed="${g.id === "all"}">${esc(g.title)} <span class="count">${g.count}</span></button>`).join("");
     }
@@ -236,20 +266,10 @@ if (codeBox) {
     });
 
     const filterStatus = document.querySelector("[data-filter-status]");
-    const tagFilters = document.querySelector(".tag-filters");
-    const tagPanel = tagFilters?.querySelector(".filters");
-    const keepTagPanelInView = () => {
-        if (!tagPanel) return;
-        tagPanel.style.transform = "";
-        if (!tagFilters.open) return;
-        const box = tagPanel.getBoundingClientRect();
-        const shift = box.left < 8 ? 8 - box.left : box.right > innerWidth - 8 ? innerWidth - 8 - box.right : 0;
-        if (shift) tagPanel.style.transform = `translateX(${shift}px)`;
-    };
-    tagFilters?.addEventListener("toggle", () => requestAnimationFrame(keepTagPanelInView));
-    window.addEventListener("resize", keepTagPanelInView);
+    const tagFilters = document.querySelector(".filter-bar .tag-filters");
+    keepTagPanelInView(tagFilters);
 
-    document.querySelectorAll(".filters").forEach((filters) => {
+    document.querySelectorAll(".filter-bar .filters").forEach((filters) => {
         filters.addEventListener("click", (event) => {
             const button = event.target.closest("button[data-tag]");
             if (!button) return;
@@ -263,11 +283,12 @@ if (codeBox) {
     applyFilters();
 }
 
-// Games, Art and Audio: category tabs switch the grouped sections.
+// Games, Art and Audio: category tabs switch sections; technology refines within them.
 document.querySelectorAll("[data-group-filter]").forEach((box) => {
     const groups = [...box.querySelectorAll(".group[data-group]")];
     const tabs = document.querySelector("[data-section-tabs]");
     if (!groups.length || !tabs) return;
+    const items = [...box.querySelectorAll("[data-item]")];
     const count = (group) => group.querySelectorAll("[data-item]").length;
     const options = [
         { id: "all", title: "All", count: groups.reduce((sum, group) => sum + count(group), 0) },
@@ -278,16 +299,60 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
         }))
     ];
     tabs.innerHTML = options.map((option) => `<button type="button" data-group="${esc(option.id)}" aria-pressed="${option.id === "all"}">${esc(option.title)} <span class="count">${option.count}</span></button>`).join("");
+
+    const tagsOf = (item) => {
+        try { return JSON.parse(item.dataset.tags || "[]"); } catch { return []; }
+    };
+    const tagFilters = document.querySelector(".filter-bar .tag-filters");
+    const filters = tagFilters?.querySelector(".filters");
+    const filterStatus = tagFilters?.querySelector("[data-filter-status]");
+    if (filters) {
+        const used = [...new Set(items.flatMap(tagsOf))]
+            .sort((a, b) => tagLabel(a).localeCompare(tagLabel(b)));
+        filters.innerHTML = `<legend class="visually-hidden">Show items with (within the selected category)</legend>` +
+            ["all", ...used].map((tag) => `<button type="button" data-tag="${esc(tag)}" aria-pressed="${tag === "all"}">${esc(tag === "all" ? "All" : tagLabel(tag))}</button>`).join("");
+        keepTagPanelInView(tagFilters);
+    }
+
+    let activeGroup = "all";
+    let activeTag = "all";
+
+    const applyFilters = () => {
+        let shown = 0;
+        groups.forEach((group) => {
+            const groupMatch = activeGroup === "all" || group.dataset.group === activeGroup;
+            const groupItems = items.filter((item) => group.contains(item));
+            let inGroup = 0;
+            groupItems.forEach((item) => {
+                const match = groupMatch && (activeTag === "all" || tagsOf(item).includes(activeTag));
+                item.hidden = !match;
+                if (match) inGroup++;
+            });
+            group.hidden = inGroup === 0;
+            group.classList.toggle("filtered", activeGroup !== "all");
+            shown += inGroup;
+        });
+        box.querySelector(".empty")?.toggleAttribute("hidden", shown > 0);
+    };
+
     tabs.addEventListener("click", (event) => {
         const button = event.target.closest("button[data-group]");
         if (!button) return;
+        activeGroup = button.dataset.group;
         tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
-        const id = button.dataset.group;
-        groups.forEach((group) => {
-            group.hidden = id !== "all" && group.dataset.group !== id;
-            group.classList.toggle("filtered", id !== "all");
-        });
+        applyFilters();
     });
+
+    filters?.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-tag]");
+        if (!button) return;
+        activeTag = button.dataset.tag;
+        filters.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+        if (filterStatus) filterStatus.textContent = button.textContent;
+        applyFilters();
+    });
+
+    applyFilters();
 });
 
 // Media carousels: image, video and any extra view can be browsed on each card.
@@ -300,12 +365,30 @@ function setMedia(box, index, manual = false) {
         current.pause();
         current.currentTime = 0;
     }
-    slides.forEach((slide, i) => { slide.hidden = i !== next; });
+    slides.forEach((slide, i) => {
+        slide.hidden = i !== next;
+        if (slide.hasAttribute("data-media-open")) slide.tabIndex = slide.hidden ? -1 : 0;
+    });
     box.dataset.mediaIndex = String(next);
     if (manual) box.dataset.mediaManual = "true";
-    const count = box.querySelector(".media-count");
-    if (count) count.textContent = `${next + 1} / ${slides.length}`;
     const active = slides[next];
+    const isDialog = box.classList.contains("dialog-media");
+    const navSlides = isDialog ? slides : slides.filter((slide) => slide.tagName === "IMG");
+    const count = box.querySelector(".media-count");
+    if (count) {
+        count.hidden = !isDialog && active.tagName === "VIDEO";
+        const pos = navSlides.indexOf(active);
+        count.textContent = `${Math.max(pos, 0) + 1} / ${navSlides.length}`;
+    }
+    if (active.tagName === "IMG") {
+        const src = active.currentSrc || active.src;
+        if (src) {
+            const url = `url("${src.replace(/"/g, '\\"')}")`;
+            box.style.setProperty("--cover", url);
+            const backdrop = box.querySelector(".media-backdrop");
+            if (backdrop) backdrop.style.backgroundImage = url;
+        }
+    }
     if (active.tagName === "VIDEO") {
         if (!active.src) active.src = active.dataset.src;
         active.play().catch(() => {});
@@ -316,7 +399,128 @@ document.addEventListener("click", (event) => {
     const arrow = event.target.closest("[data-media-step]");
     if (!arrow) return;
     const box = arrow.closest("[data-media-carousel]");
-    setMedia(box, Number(box.dataset.mediaIndex || 0) + Number(arrow.dataset.mediaStep), true);
+    const slides = [...box.querySelectorAll("[data-media-slide]")];
+    const current = Number(box.dataset.mediaIndex || 0);
+    const step = Number(arrow.dataset.mediaStep);
+    if (box.classList.contains("dialog-media")) {
+        setMedia(box, current + step, true);
+        return;
+    }
+    // Arrows on cards browse that card's stills; video previews stay on hover.
+    const images = slides.filter((slide) => slide.tagName === "IMG");
+    if (!images.length) return;
+    const pos = images.indexOf(slides[current]);
+    const next = pos < 0
+        ? (step > 0 ? images[0] : images[images.length - 1])
+        : images[(pos + step + images.length) % images.length];
+    setMedia(box, slides.indexOf(next), true);
+});
+
+// Full-size image viewer opened from a card or from the project dialog.
+const imageDialog = document.createElement("dialog");
+imageDialog.className = "image-lightbox";
+imageDialog.setAttribute("aria-label", "Enlarged image");
+imageDialog.innerHTML = `<span class="lightbox-backdrop" aria-hidden="true"></span>
+    <img alt="" role="button" tabindex="0" aria-label="Close enlarged image" data-image-close>
+    <div class="lightbox-bar">
+        <button type="button" class="dialog-arrow" data-image-step="-1" aria-label="Previous image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+        <p aria-live="polite"></p>
+        <button type="button" class="dialog-arrow" data-image-step="1" aria-label="Next image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
+    </div>`;
+document.body.appendChild(imageDialog);
+let imageOpener = null;
+let imageSlides = [];
+let imageIndex = 0;
+
+function renderImage() {
+    const slide = imageSlides[imageIndex];
+    if (!slide) return;
+    const img = imageDialog.querySelector("img");
+    if (slide.naturalWidth && slide.naturalHeight) {
+        img.setAttribute("width", slide.naturalWidth);
+        img.setAttribute("height", slide.naturalHeight);
+    } else {
+        img.removeAttribute("width");
+        img.removeAttribute("height");
+    }
+    const src = slide.currentSrc || slide.src;
+    img.src = src;
+    img.alt = slide.alt || "";
+    imageDialog.querySelector(".lightbox-backdrop").style.backgroundImage = `url("${src.replace(/"/g, '\\"')}")`;
+    imageDialog.querySelector(".lightbox-bar p").textContent = `${imageIndex + 1} / ${imageSlides.length}`;
+    imageDialog.querySelector(".lightbox-bar").hidden = imageSlides.length < 2;
+    imageDialog.querySelectorAll("[data-image-step]").forEach((button) => {
+        button.hidden = imageSlides.length < 2;
+    });
+}
+
+async function openImage(opener, box, image) {
+    imageSlides = [...box.querySelectorAll("img[data-media-slide]")];
+    if (!imageSlides.length) return;
+    imageIndex = Math.max(imageSlides.indexOf(image), 0);
+    imageOpener = opener;
+    await Promise.race([
+        image.decode().catch(() => {}),
+        new Promise((resolve) => setTimeout(resolve, 250))
+    ]);
+    renderImage();
+    imageOpener.focus({ preventScroll: true });
+    imageDialog.showModal();
+}
+
+document.addEventListener("click", async (event) => {
+    const image = event.target.closest("img[data-media-open]");
+    if (!image || image.hidden) return;
+    const box = image.closest("[data-media-carousel]");
+    if (!box) return;
+    await openImage(image, box, image);
+});
+
+document.addEventListener("keydown", async (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const image = event.target.closest?.("img[data-media-open]");
+    if (!image || image.hidden) return;
+    event.preventDefault();
+    const box = image.closest("[data-media-carousel]");
+    if (!box) return;
+    await openImage(image, box, image);
+});
+
+imageDialog.addEventListener("click", (event) => {
+    if (event.target === imageDialog) {
+        imageDialog.close();
+        return;
+    }
+    const step = event.target.closest("[data-image-step]");
+    if (step) {
+        imageIndex = (imageIndex + Number(step.dataset.imageStep) + imageSlides.length) % imageSlides.length;
+        renderImage();
+        return;
+    }
+    if (event.target.closest("[data-image-close]")) imageDialog.close();
+});
+
+imageDialog.addEventListener("keydown", (event) => {
+    if ((event.key === "Enter" || event.key === " ") && event.target.closest?.("[data-image-close]")) {
+        event.preventDefault();
+        imageDialog.close();
+        return;
+    }
+    if (imageSlides.length < 2) return;
+    if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        imageIndex = (imageIndex - 1 + imageSlides.length) % imageSlides.length;
+        renderImage();
+    }
+    if (event.key === "ArrowRight") {
+        event.preventDefault();
+        imageIndex = (imageIndex + 1) % imageSlides.length;
+        renderImage();
+    }
+});
+
+imageDialog.addEventListener("close", () => {
+    requestAnimationFrame(() => imageOpener?.focus({ preventScroll: true }));
 });
 
 // Short muted previews: show the video slide while a card is hovered or focused.
@@ -396,12 +600,14 @@ const projectsById = new Map((window.PROJECTS || []).map((p) => [p.id, p]));
 const projectDialog = document.createElement("dialog");
 projectDialog.className = "project-dialog";
 projectDialog.setAttribute("aria-label", "Project details");
-projectDialog.innerHTML = `<form method="dialog" class="dialog-top"><button type="submit" class="dialog-close" aria-label="Close project details">&times;</button></form>
-    <div class="dialog-content"></div>
+projectDialog.innerHTML = `<div class="dialog-content"></div>
     <div class="dialog-nav">
-        <button type="button" class="dialog-arrow" data-dialog-step="-1" aria-label="Previous project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
-        <span class="dialog-counter" aria-live="polite"></span>
-        <button type="button" class="dialog-arrow" data-dialog-step="1" aria-label="Next project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
+        <div class="dialog-pager">
+            <button type="button" class="dialog-arrow" data-dialog-step="-1" aria-label="Previous project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+            <span class="dialog-counter" aria-live="polite"></span>
+            <button type="button" class="dialog-arrow" data-dialog-step="1" aria-label="Next project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
+        </div>
+        <form method="dialog" class="dialog-close-form"><button type="submit" class="dialog-close" aria-label="Close project details">&times;</button></form>
     </div>`;
 document.body.appendChild(projectDialog);
 let dialogOpener = null;
@@ -432,20 +638,24 @@ const renderProject = (index, mediaIndex = 0) => {
                 : "";
     const slideIndex = Math.min(Math.max(mediaIndex, 0), Math.max(mediaItems(p).length - 1, 0));
     projectDialog.querySelector(".dialog-content").innerHTML = `
-        ${media(p, true, slideIndex)}
-        <div class="dialog-body">
-            <p class="meta">${meta(p)}</p>
-            <h2>${esc(p.title)}</h2>
-            ${p.role ? `<p class="role">${esc(p.role)}</p>` : ""}
-            <p class="summary">${esc(p.summary)}</p>
-            ${trackList}
-            ${tags(p)}
-            ${p.links?.length ? actions(p, "") : ""}
+        <div class="dialog-topgrid">
+            <div class="dialog-intro">
+                <p class="meta">${meta(p)}</p>
+                <h2>${esc(p.title)}</h2>
+                ${p.role ? `<p class="role">${esc(p.role)}</p>` : ""}
+                <p class="summary">${esc(p.summary)}</p>
+                ${trackList}
+                ${tags(p)}
+                ${p.links?.length ? actions(p, "") : ""}
+            </div>
+            ${media(p, true, slideIndex)}
         </div>`;
     const dialogMedia = projectDialog.querySelector("[data-media-carousel]");
     if (dialogMedia) setMedia(dialogMedia, slideIndex);
     projectDialog.querySelector(".dialog-counter").textContent = `${index + 1} / ${dialogOrder.length}`;
-    projectDialog.querySelector(".dialog-nav").hidden = dialogOrder.length < 2;
+    const singleProject = dialogOrder.length < 2;
+    projectDialog.querySelector(".dialog-counter").hidden = singleProject;
+    projectDialog.querySelectorAll("[data-dialog-step]").forEach((button) => { button.hidden = singleProject; });
     if (hasTracks) {
         const rows = [...projectDialog.querySelectorAll("[data-track-row]")];
         const players = rows.map((row) => row.querySelector(".track-player"));
@@ -477,7 +687,7 @@ const renderProject = (index, mediaIndex = 0) => {
         }));
     }
     const card = [...document.querySelectorAll("[data-project]")].find((el) => el.dataset.project === p.id);
-    if (card) dialogOpener = card;
+    if (card && (!dialogOpener || !dialogOpener.isConnected)) dialogOpener = card;
 };
 
 const stepProject = (delta) => {
@@ -511,15 +721,15 @@ projectDialog.addEventListener("close", () => {
 });
 
 document.addEventListener("click", (event) => {
-    if (event.target.closest("a, [data-audio-preview], [data-media-step], .media-arrow")) return;
+    if (event.target.closest("a, [data-audio-preview], [data-media-step], img[data-media-open], .media-arrow")) return;
     const opener = event.target.closest("[data-open-project], [data-project], [data-open-audio]");
     if (!opener || projectDialog.contains(opener)) return;
     const id = opener.dataset.openProject || opener.dataset.project || opener.dataset.openAudio;
     if (!projectsById.has(id)) return;
     const scope = opener.closest("[data-featured], [data-code], [data-games], [data-audio]") || document;
-    dialogOrder = [...scope.querySelectorAll("[data-project]")]
+    dialogOrder = [...new Set([...scope.querySelectorAll("[data-project]")]
         .filter((el) => el.getBoundingClientRect().height > 0)
-        .map((el) => el.dataset.project);
+        .map((el) => el.dataset.project))];
     let index = dialogOrder.indexOf(id);
     if (index < 0) {
         dialogOrder = [id];

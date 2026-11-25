@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" role="img" aria-label="Genesis Engine">
+  <rect width="1200" height="750" fill="#17304f"/>
+  <g opacity="0.16" stroke="#7cc4ff" stroke-width="2">
+    <path d="M0 150h1200M0 300h1200M0 450h1200M0 600h1200"/>
+    <path d="M200 0v750M400 0v750M600 0v750M800 0v750M1000 0v750"/>
+  </g>
+  <g transform="translate(600 300)">
+    <path d="M0-150 130-75v150L0 150-130 75v-150z" fill="none" stroke="#7cc4ff" stroke-width="10"/>
+    <path d="M0-90 78-45v90L0 90-78 45v-90z" fill="#7cc4ff" opacity="0.2"/>
+    <circle cx="0" cy="0" r="34" fill="#f4a8cc"/>
+  </g>
+  <text x="600" y="560" text-anchor="middle" font-family="system-ui, sans-serif" font-size="86" font-weight="700" letter-spacing="8" fill="#eaf4ff">GENESIS</text>
+  <text x="600" y="625" text-anchor="middle" font-family="system-ui, sans-serif" font-size="34" letter-spacing="6" fill="#7cc4ff">ECS GAME ENGINE</text>
+</svg>

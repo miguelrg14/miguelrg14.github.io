@@ -13,9 +13,11 @@
     <meta property="og:url" content="https://miguelrg14.github.io/games/">
     <meta property="og:image" content="https://miguelrg14.github.io/assets/img/og.jpg">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" href="../assets/img/favicon.png">
+    <link rel="icon" href="../assets/img/favicon.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="../assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../css/style.css">
+    <script src="../data/project-media.js" defer></script>
     <script src="../data/projects.js" defer></script>
     <script src="../js/main.js" defer></script>
 </head>
@@ -59,6 +61,12 @@
         <div class="filter-bar">
             <a class="button small ghost filter-external" href="https://miguel-rg14.itch.io/" title="More on itch.io" aria-label="More on itch.io"><svg class="icon" aria-hidden="true"><use href="#itch"></use></svg></a>
             <nav class="group-tabs" data-section-tabs aria-label="Game categories"></nav>
+            <details class="tag-filters">
+                <summary>Filter by technology <span data-filter-status>All</span></summary>
+                <fieldset class="filters">
+                    <legend class="visually-hidden">Show games with (within the selected category)</legend>
+                </fieldset>
+            </details>
         </div>
 
         <div data-games data-group-filter aria-label="Game list">

@@ -11,9 +11,9 @@
  */
 window.PROJECT_GROUPS = [
     { id: "games", title: "Games", intro: "Source code of the games on the Games page." },
-    { id: "graphics", title: "Graphics and simulation", intro: "Rendering from scratch in C++ and OpenGL, and procedural meshes in Unity." },
+    { id: "graphics", title: "Graphics and simulation", intro: "Rendering from scratch in C++ and OpenGL, shaders and VFX in Unity, and procedural meshes." },
     { id: "ai", title: "Game AI", intro: "Classic game AI techniques, each one playable." },
-    { id: "engines", title: "Engine labs", intro: "Gameplay systems and multiplayer in Unity and Unreal Engine." },
+    { id: "engines", title: "Engine labs", intro: "Gameplay systems, multiplayer and ECS engines in Unity, Unreal Engine and C++." },
     { id: "dotnet", title: "C# and .NET", intro: "University coursework rebuilt as tested .NET solutions with downloadable releases." },
     { id: "web", title: "Web", intro: "HTML, CSS, JavaScript, PHP and MySQL." }
 ];
@@ -94,6 +94,25 @@ window.PROJECTS = [
         ]
     },
     {
+        id: "last-grounds",
+        kind: "game",
+        featured: false,
+        title: "Last Grounds",
+        year: "2026",
+        team: "Solo project",
+        role: "Original GameMaker game and Unity 6 port",
+        summary: "Top-down pixel-art zombie horde shooter. Hold the last barricade, switch between three weapons and survive five days until rescue arrives. My first game, rebuilt in Unity 6 with the original art, sounds and game feel, plus six modes, five zombie types, local leaderboards and touch and gamepad controls.",
+        tags: ["Unity", "C#", "Pixel art", "Mobile", "WebGL"],
+        image: "assets/projects/readme/last-grounds/preview.png",
+        alt: "Title, gameplay and game over screens of Last Grounds",
+        contain: true,
+        links: [
+            { kind: "play", label: "Play in the browser", url: "https://miguelrg14.github.io/Last-Grounds/" },
+            { kind: "download", label: "Download", url: "https://github.com/miguelrg14/Last-Grounds/releases/latest" },
+            { kind: "source", label: "Source code", url: "https://github.com/miguelrg14/Last-Grounds" }
+        ]
+    },
+    {
         id: "sticky-fabric",
         kind: "code",
         group: "graphics",
@@ -126,6 +145,24 @@ window.PROJECTS = [
         alt: "Rendered scene with a sandy skybox and imported models",
         links: [
             { kind: "source", label: "Source code", url: "https://github.com/miguelrg14/VS_3D-Renderer" }
+        ]
+    },
+    {
+        id: "u-shaders-vfx",
+        kind: "code",
+        group: "graphics",
+        featured: false,
+        title: "Shaders and VFX",
+        year: "2026",
+        team: "Unity study library",
+        summary: "A personal library of 52 shader and image-effect demos in the Built-in Render Pipeline, plus real-time VFX Graph scenes in URP. Each demo has notes, materials and its own scene, with a playable browser build and Windows release.",
+        tags: ["Unity", "Shaders", "VFX", "HLSL"],
+        image: "assets/projects/readme/u-shaders-vfx/menu.jpg",
+        alt: "Main menu of the shaders and VFX demo library",
+        links: [
+            { kind: "play", label: "Play demos", url: "https://miguelrg14.github.io/U_Shaders-and-VFX/" },
+            { kind: "download", label: "Download", url: "https://github.com/miguelrg14/U_Shaders-and-VFX/releases/latest" },
+            { kind: "source", label: "Source code", url: "https://github.com/miguelrg14/U_Shaders-and-VFX" }
         ]
     },
     {
@@ -180,6 +217,39 @@ window.PROJECTS = [
         alt: "First-person shooter HUD in Unreal Engine with ammo and health bars",
         links: [
             { kind: "source", label: "Source code", url: "https://github.com/miguelrg14/UE_Lab" }
+        ]
+    },
+    {
+        id: "ecs-engine",
+        kind: "code",
+        groups: ["engines", "graphics"],
+        featured: false,
+        title: "ECS Engine",
+        year: "2026",
+        team: "Solo project",
+        summary: "A small game engine written from scratch in C++20 and OpenGL 3.3 around a data-oriented entity component system: sparse-set components, a priority task kernel, transforms with hierarchy, typed events, collisions and a playable demo. Includes live ImGui debug tools, 51 unit tests and CI builds.",
+        tags: ["C++", "OpenGL", "ECS", "ImGui"],
+        image: "assets/projects/readme/ecs-engine/debug-tools.png",
+        alt: "Debug tools of the ECS Engine over the playable demo",
+        links: [
+            { kind: "download", label: "Download build", url: "https://github.com/miguelrg14/ECS_Engine/releases/latest" },
+            { kind: "source", label: "Source code", url: "https://github.com/miguelrg14/ECS_Engine" }
+        ]
+    },
+    {
+        id: "genesis-engine",
+        kind: "code",
+        groups: ["engines", "graphics"],
+        featured: false,
+        title: "Genesis Engine",
+        year: "2026",
+        team: "Solo project",
+        summary: "Modular game engine built to learn engine architecture from TheCherno's series: an ECS, layer stack, event dispatcher, GLFW and OpenGL context, ImGui debug panels, spdlog logging and Premake builds on Windows with C++20.",
+        tags: ["C++", "OpenGL", "ECS", "ImGui"],
+        image: "assets/projects/genesis-engine.svg",
+        alt: "Genesis Engine cover with an isometric ECS node",
+        links: [
+            { kind: "source", label: "Source code", url: "https://github.com/miguelrg14/Genesis-Engine" }
         ]
     },
     {

@@ -13,7 +13,8 @@
     <meta property="og:url" content="https://miguelrg14.github.io/art/">
     <meta property="og:image" content="https://miguelrg14.github.io/assets/img/og.jpg">
     <meta name="twitter:card" content="summary_large_image">
-    <link rel="icon" href="../assets/img/favicon.png">
+    <link rel="icon" href="../assets/img/favicon.png" sizes="32x32" type="image/png">
+    <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="../assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../css/style.css">
     <script src="../js/main.js" defer></script>
@@ -58,6 +59,12 @@
         <div class="filter-bar">
             <a class="button small ghost filter-external" href="https://www.artstation.com/miguel_rg14" title="More on ArtStation" aria-label="More on ArtStation"><svg class="icon" aria-hidden="true"><use href="#artstation"></use></svg></a>
             <nav class="group-tabs" data-section-tabs aria-label="Art categories"></nav>
+            <details class="tag-filters">
+                <summary>Filter by technology <span data-filter-status>All</span></summary>
+                <fieldset class="filters">
+                    <legend class="visually-hidden">Show artwork with (within the selected category)</legend>
+                </fieldset>
+            </details>
         </div>
 
         <div data-group-filter>
@@ -67,19 +74,19 @@
                     <p class="group-intro">Illustration, painting and character design.</p>
                 </div>
                 <ul class="gallery">
-                    <li data-item>
+                    <li data-item data-tags='["illustrator", "drawing"]'>
                         <figure>
                             <button type="button" aria-label="Enlarge Illustration" style="--cover: url('../assets/art/cowboy-digital.webp')"><img src="../assets/art/cowboy-digital.webp" alt="Digital illustration of a green-skinned cowboy firing a revolver at sunset" width="1200" height="845" loading="lazy"></button>
                             <figcaption><strong>Illustration</strong>Drawn from scratch in Illustrator.</figcaption>
                         </figure>
                     </li>
-                    <li data-item>
+                    <li data-item data-tags='["photoshop", "painting"]'>
                         <figure>
                             <button type="button" aria-label="Enlarge Digital painting" style="--cover: url('../assets/art/explorer.webp')"><img src="../assets/art/explorer.webp" alt="An explorer with goggles and a torch finding a chest in a cave" width="848" height="1200" loading="lazy"></button>
                             <figcaption><strong>Digital painting</strong>Painted in Photoshop.</figcaption>
                         </figure>
                     </li>
-                    <li data-item>
+                    <li data-item data-tags='["watercolour", "drawing"]'>
                         <figure>
                             <button type="button" aria-label="Enlarge Character sheet" style="--cover: url('../assets/art/cowboy-drawing.webp')"><img src="../assets/art/cowboy-drawing.webp" alt="Watercolour character sheet of a cowboy" width="1200" height="900" loading="lazy"></button>
                             <figcaption><strong>Character sheet</strong>Watercolour on paper: a cowboy and the same cowboy running through a western town.</figcaption>
@@ -94,13 +101,13 @@
                     <p class="group-intro">Scenes drawn tile by tile, for games and on their own.</p>
                 </div>
                 <ul class="gallery compact">
-                    <li class="pixel" data-item>
+                    <li class="pixel" data-item data-tags='["pixel art"]'>
                         <figure>
                             <button type="button" aria-label="Enlarge Isometric hospital" style="--cover: url('../assets/art/hospital-pixel-art.png')"><img src="../assets/art/hospital-pixel-art.png" alt="Isometric pixel art of a hospital and its garden" width="1900" height="1300" loading="lazy"></button>
                             <figcaption><strong>Isometric hospital</strong>Pixel art.</figcaption>
                         </figure>
                     </li>
-                    <li class="pixel" data-item>
+                    <li class="pixel" data-item data-tags='["pixel art"]'>
                         <figure>
                             <button type="button" aria-label="Enlarge Zombie arcade" style="--cover: url('../assets/art/zombie-game.png')"><img src="../assets/art/zombie-game.png" alt="Top-down pixel art scene of a zombie arcade game" width="560" height="880" loading="lazy"></button>
                             <figcaption><strong>Zombie arcade</strong>A pixel art arcade game about zombie hordes. I drew everything in it.</figcaption>
@@ -115,13 +122,13 @@
                     <p class="group-intro">Low-poly environments modelled, unwrapped and textured.</p>
                 </div>
                 <ul class="gallery compact">
-                    <li data-item>
+                    <li data-item data-tags='["3d"]'>
                         <figure>
                             <button type="button" aria-label="Enlarge Alcatraz, 3D model" style="--cover: url('../assets/art/alcatraz-1.webp')"><img src="../assets/art/alcatraz-1.webp" alt="3D model of Alcatraz, a long cell block" width="1200" height="700" loading="lazy"></button>
                             <figcaption><strong>Alcatraz, 3D model</strong>Modelled, unwrapped and textured for a low-poly scene.</figcaption>
                         </figure>
                     </li>
-                    <li data-item>
+                    <li data-item data-tags='["3d"]'>
                         <figure>
                             <button type="button" aria-label="Enlarge Alcatraz, inside" style="--cover: url('../assets/art/alcatraz-2.webp')"><img src="../assets/art/alcatraz-2.webp" alt="3D model of Alcatraz, cells on both sides of a corridor" width="1200" height="653" loading="lazy"></button>
                             <figcaption><strong>Alcatraz, inside</strong>Cells on both sides of the corridor.</figcaption>
@@ -129,6 +136,8 @@
                     </li>
                 </ul>
             </section>
+
+            <p class="empty" hidden>Nothing with that combination yet.</p>
         </div>
 
         <dialog class="lightbox" aria-label="Enlarged picture">
