@@ -46,7 +46,7 @@
                     <li><a href="../games/index.html" aria-current="page">Games</a></li>
                     <li><a href="../code/index.html">Code</a></li>
                     <li><a href="../art/index.html">Art</a></li>
-                    <li><a href="../music/index.html">Music</a></li>
+                    <li><a href="../music/index.html">Audio</a></li>
                 </ul>
             </nav>
             <a class="button small" href="../contact/index.html">Contact</a>
@@ -55,11 +55,14 @@
 
     <main id="main">
         <h1 id="title" class="visually-hidden">Games</h1>
-        <p class="lead">Games I've made alone and in teams, with what I did on each one.</p>
 
-        <section data-games aria-label="Game list">
+        <div class="filter-bar">
+            <nav class="group-tabs" data-section-tabs aria-label="Game categories"></nav>
+        </div>
+
+        <div data-games data-group-filter aria-label="Game list">
             <noscript><p>The game list needs JavaScript. See my games on <a href="https://miguel-rg14.itch.io/">itch.io</a>.</p></noscript>
-        </section>
+        </div>
     </main>
 
     <footer class="site-footer">

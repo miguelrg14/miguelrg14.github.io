@@ -45,7 +45,7 @@
                     <li><a href="../games/index.html">Games</a></li>
                     <li><a href="../code/index.html">Code</a></li>
                     <li><a href="../art/index.html" aria-current="page">Art</a></li>
-                    <li><a href="../music/index.html">Music</a></li>
+                    <li><a href="../music/index.html">Audio</a></li>
                 </ul>
             </nav>
             <a class="button small" href="../contact/index.html">Contact</a>
@@ -54,55 +54,83 @@
 
     <main id="main">
         <h1 id="title" class="visually-hidden">Art</h1>
-        <p class="lead">Illustration, pixel art, 3D models and drawing, for games and for fun.</p>
 
-        <section aria-label="Gallery">
-            <ul class="gallery">
-            <li>
-                <figure>
-                    <button type="button" aria-label="Enlarge Illustration"><img src="../assets/art/cowboy-digital.webp" alt="Digital illustration of a green-skinned cowboy firing a revolver at sunset" width="1200" height="845" loading="lazy"></button>
-                    <figcaption><strong>Illustration</strong>Drawn from scratch in Illustrator.</figcaption>
-                </figure>
-            </li>
-            <li>
-                <figure>
-                    <button type="button" aria-label="Enlarge Digital painting"><img src="../assets/art/explorer.webp" alt="An explorer with goggles and a torch finding a chest in a cave" width="848" height="1200" loading="lazy"></button>
-                    <figcaption><strong>Digital painting</strong>Painted in Photoshop.</figcaption>
-                </figure>
-            </li>
-            <li class="pixel">
-                <figure>
-                    <button type="button" aria-label="Enlarge Isometric hospital"><img src="../assets/art/hospital-pixel-art.png" alt="Isometric pixel art of a hospital and its garden" width="1900" height="1300" loading="lazy"></button>
-                    <figcaption><strong>Isometric hospital</strong>Pixel art.</figcaption>
-                </figure>
-            </li>
-            <li>
-                <figure>
-                    <button type="button" aria-label="Enlarge Alcatraz, 3D model"><img src="../assets/art/alcatraz-1.webp" alt="3D model of Alcatraz, a long cell block" width="1200" height="700" loading="lazy"></button>
-                    <figcaption><strong>Alcatraz, 3D model</strong>Modelled, unwrapped and textured for a low-poly scene.</figcaption>
-                </figure>
-            </li>
-            <li class="pixel">
-                <figure>
-                    <button type="button" aria-label="Enlarge Zombie arcade"><img src="../assets/art/zombie-game.png" alt="Top-down pixel art scene of a zombie arcade game" width="560" height="880" loading="lazy"></button>
-                    <figcaption><strong>Zombie arcade</strong>A pixel art arcade game about zombie hordes. I drew everything in it.</figcaption>
-                </figure>
-            </li>
-            <li>
-                <figure>
-                    <button type="button" aria-label="Enlarge Alcatraz, inside"><img src="../assets/art/alcatraz-2.webp" alt="3D model of Alcatraz, cells on both sides of a corridor" width="1200" height="653" loading="lazy"></button>
-                    <figcaption><strong>Alcatraz, inside</strong>Cells on both sides of the corridor.</figcaption>
-                </figure>
-            </li>
-            <li>
-                <figure>
-                    <button type="button" aria-label="Enlarge Character sheet"><img src="../assets/art/cowboy-drawing.webp" alt="Watercolour character sheet of a cowboy" width="1200" height="900" loading="lazy"></button>
-                    <figcaption><strong>Character sheet</strong>Watercolour on paper: a cowboy and the same cowboy running through a western town.</figcaption>
-                </figure>
-            </li>
-            </ul>
+        <div class="filter-bar">
+            <nav class="group-tabs" data-section-tabs aria-label="Art categories"></nav>
+        </div>
+
+        <div data-group-filter>
+            <section class="group" data-group="digital" aria-labelledby="art-digital">
+                <div class="group-head">
+                    <h2 id="art-digital">Digital art</h2>
+                    <p class="group-intro">Illustration, painting and character design.</p>
+                </div>
+                <ul class="gallery">
+                    <li data-item>
+                        <figure>
+                            <button type="button" aria-label="Enlarge Illustration"><img src="../assets/art/cowboy-digital.webp" alt="Digital illustration of a green-skinned cowboy firing a revolver at sunset" width="1200" height="845" loading="lazy"></button>
+                            <figcaption><strong>Illustration</strong>Drawn from scratch in Illustrator.</figcaption>
+                        </figure>
+                    </li>
+                    <li data-item>
+                        <figure>
+                            <button type="button" aria-label="Enlarge Digital painting"><img src="../assets/art/explorer.webp" alt="An explorer with goggles and a torch finding a chest in a cave" width="848" height="1200" loading="lazy"></button>
+                            <figcaption><strong>Digital painting</strong>Painted in Photoshop.</figcaption>
+                        </figure>
+                    </li>
+                    <li data-item>
+                        <figure>
+                            <button type="button" aria-label="Enlarge Character sheet"><img src="../assets/art/cowboy-drawing.webp" alt="Watercolour character sheet of a cowboy" width="1200" height="900" loading="lazy"></button>
+                            <figcaption><strong>Character sheet</strong>Watercolour on paper: a cowboy and the same cowboy running through a western town.</figcaption>
+                        </figure>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="group" data-group="pixel" aria-labelledby="art-pixel">
+                <div class="group-head">
+                    <h2 id="art-pixel">Pixel art</h2>
+                    <p class="group-intro">Scenes drawn tile by tile, for games and on their own.</p>
+                </div>
+                <ul class="gallery">
+                    <li class="pixel" data-item>
+                        <figure>
+                            <button type="button" aria-label="Enlarge Isometric hospital"><img src="../assets/art/hospital-pixel-art.png" alt="Isometric pixel art of a hospital and its garden" width="1900" height="1300" loading="lazy"></button>
+                            <figcaption><strong>Isometric hospital</strong>Pixel art.</figcaption>
+                        </figure>
+                    </li>
+                    <li class="pixel" data-item>
+                        <figure>
+                            <button type="button" aria-label="Enlarge Zombie arcade"><img src="../assets/art/zombie-game.png" alt="Top-down pixel art scene of a zombie arcade game" width="560" height="880" loading="lazy"></button>
+                            <figcaption><strong>Zombie arcade</strong>A pixel art arcade game about zombie hordes. I drew everything in it.</figcaption>
+                        </figure>
+                    </li>
+                </ul>
+            </section>
+
+            <section class="group" data-group="3d" aria-labelledby="art-3d">
+                <div class="group-head">
+                    <h2 id="art-3d">3D models</h2>
+                    <p class="group-intro">Low-poly environments modelled, unwrapped and textured.</p>
+                </div>
+                <ul class="gallery">
+                    <li data-item>
+                        <figure>
+                            <button type="button" aria-label="Enlarge Alcatraz, 3D model"><img src="../assets/art/alcatraz-1.webp" alt="3D model of Alcatraz, a long cell block" width="1200" height="700" loading="lazy"></button>
+                            <figcaption><strong>Alcatraz, 3D model</strong>Modelled, unwrapped and textured for a low-poly scene.</figcaption>
+                        </figure>
+                    </li>
+                    <li data-item>
+                        <figure>
+                            <button type="button" aria-label="Enlarge Alcatraz, inside"><img src="../assets/art/alcatraz-2.webp" alt="3D model of Alcatraz, cells on both sides of a corridor" width="1200" height="653" loading="lazy"></button>
+                            <figcaption><strong>Alcatraz, inside</strong>Cells on both sides of the corridor.</figcaption>
+                        </figure>
+                    </li>
+                </ul>
+            </section>
+
             <p class="actions more"><a class="button" href="https://www.artstation.com/miguel_rg14"><svg class="icon" aria-hidden="true"><use href="#artstation"></use></svg>More on ArtStation</a></p>
-        </section>
+        </div>
 
         <dialog class="lightbox" aria-label="Enlarged picture">
             <img src="../assets/art/cowboy-digital.webp" alt="">
