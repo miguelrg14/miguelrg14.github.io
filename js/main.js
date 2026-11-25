@@ -9,12 +9,32 @@ const esc = (text) =>
 
 const asset = (path) => (/^https?:/.test(path) ? path : root + path);
 
-function media(p) {
-    const video = p.video
-        ? `<video muted loop playsinline preload="none" aria-hidden="true" data-src="${esc(asset(p.video))}"></video>`
-        : "";
-    return `<div class="media${p.contain ? " contain" : ""}">
-        <img src="${esc(asset(p.image))}" alt="${esc(p.alt || p.title)}" loading="lazy" width="1200" height="750">${video}
+function mediaItems(p) {
+    const items = [];
+    if (p.image) items.push({ kind: "image", src: asset(p.image), alt: p.alt || p.title });
+    const video = p.video || p.coverVideo;
+    if (video) items.push({ kind: "video", src: asset(video), alt: `Video preview of ${p.title}` });
+    if (p.extra) items.push({ kind: "image", src: asset(p.extra), alt: `Another view of ${p.title}` });
+    return items;
+}
+
+function media(p, dialog = false, index = 0) {
+    const items = mediaItems(p);
+    if (!items.length) return "";
+    const slides = items.map((item, i) => {
+        const hidden = i === index ? "" : " hidden";
+        if (item.kind === "video") {
+            return `<video data-media-slide${hidden} data-src="${esc(item.src)}" muted loop playsinline${dialog ? " controls" : ""} preload="none" aria-label="${esc(item.alt)}"></video>`;
+        }
+        return `<img data-media-slide${hidden} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" width="1200" height="750">`;
+    }).join("");
+    const controls = items.length < 2 ? "" : `
+        <button type="button" class="media-arrow media-prev" data-media-step="-1" aria-label="Previous media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+        <button type="button" class="media-arrow media-next" data-media-step="1" aria-label="Next media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
+        <span class="media-count" aria-live="polite">${index + 1} / ${items.length}</span>`;
+    return `<div class="media${dialog ? " dialog-media" : ""}${p.contain ? " contain" : ""}" data-media-carousel data-media-index="${index}" style="--cover: url('${esc(asset(items[0].src))}')">
+        <span class="media-backdrop" aria-hidden="true"></span>
+        ${slides}${controls}
     </div>`;
 }
 
@@ -73,7 +93,8 @@ function audioCard(a) {
         ? `<button type="button" class="audio-play" data-audio-preview="${esc(asset(a.preview))}" aria-label="Play preview of ${esc(a.title)}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#play"></use></svg></button>`
         : "";
     return `<li class="audio-card" data-item>
-        <div class="audio-art audio-cover" data-open-audio="${esc(a.id)}">
+        <div class="audio-art audio-cover" data-open-audio="${esc(a.id)}" style="--cover: url('${esc(asset(a.cover))}')">
+            <span class="audio-backdrop" aria-hidden="true"></span>
             <img src="${esc(asset(a.cover))}" alt="" loading="lazy" width="600" height="600">${video}
             ${play}
         </div>
@@ -269,10 +290,58 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
     });
 });
 
-// Short muted previews: load and play only while a card is hovered or focused.
+// Media carousels: image, video and any extra view can be browsed on each card.
+function setMedia(box, index, manual = false) {
+    const slides = [...box.querySelectorAll("[data-media-slide]")];
+    if (!slides.length) return;
+    const next = (index + slides.length) % slides.length;
+    const current = slides.find((slide) => !slide.hidden);
+    if (current && current !== slides[next] && current.tagName === "VIDEO") {
+        current.pause();
+        current.currentTime = 0;
+    }
+    slides.forEach((slide, i) => { slide.hidden = i !== next; });
+    box.dataset.mediaIndex = String(next);
+    if (manual) box.dataset.mediaManual = "true";
+    const count = box.querySelector(".media-count");
+    if (count) count.textContent = `${next + 1} / ${slides.length}`;
+    const active = slides[next];
+    if (active.tagName === "VIDEO") {
+        if (!active.src) active.src = active.dataset.src;
+        active.play().catch(() => {});
+    }
+}
+
+document.addEventListener("click", (event) => {
+    const arrow = event.target.closest("[data-media-step]");
+    if (!arrow) return;
+    const box = arrow.closest("[data-media-carousel]");
+    setMedia(box, Number(box.dataset.mediaIndex || 0) + Number(arrow.dataset.mediaStep), true);
+});
+
+// Short muted previews: show the video slide while a card is hovered or focused.
 if (!reduceMotion) {
-    document.querySelectorAll(".card, .game, .audio-card").forEach((el) => {
-        const box = el.querySelector(".media, .audio-cover");
+    document.querySelectorAll(".card, .game").forEach((el) => {
+        const box = el.querySelector("[data-media-carousel]");
+        if (!box) return;
+        const slides = [...box.querySelectorAll("[data-media-slide]")];
+        const videoIndex = slides.findIndex((slide) => slide.tagName === "VIDEO");
+        if (videoIndex < 0) return;
+        const preview = () => {
+            if (box.dataset.mediaManual !== "true") setMedia(box, videoIndex);
+        };
+        const cover = () => {
+            if (box.dataset.mediaManual !== "true") setMedia(box, 0);
+        };
+        el.addEventListener("pointerenter", preview);
+        el.addEventListener("pointerleave", cover);
+        el.addEventListener("focusin", preview);
+        el.addEventListener("focusout", (e) => {
+            if (!el.contains(e.relatedTarget)) cover();
+        });
+    });
+    document.querySelectorAll(".audio-card").forEach((el) => {
+        const box = el.querySelector(".audio-cover");
         const video = box && box.querySelector("video");
         if (!video) return;
         const start = () => {
@@ -339,11 +408,12 @@ let dialogOpener = null;
 let dialogOrder = [];
 let dialogIndex = 0;
 
-const renderProject = (index) => {
+const renderProject = (index, mediaIndex = 0) => {
     const p = projectsById.get(dialogOrder[index]);
     if (!p) return;
     dialogIndex = index;
     projectDialog.querySelectorAll(".track-player").forEach((audio) => audio.pause());
+    projectDialog.querySelectorAll("[data-media-carousel] video").forEach((video) => video.pause());
     const hasTracks = p.tracks?.length > 0;
     const trackList = hasTracks
         ? `<div class="dialog-tracks" aria-label="Tracks">${p.tracks.map((t, i) => `
@@ -360,11 +430,9 @@ const renderProject = (index) => {
             : p.isAudio
                 ? `<p class="track-note">The audio files for this folder are not added yet.</p>`
                 : "";
+    const slideIndex = Math.min(Math.max(mediaIndex, 0), Math.max(mediaItems(p).length - 1, 0));
     projectDialog.querySelector(".dialog-content").innerHTML = `
-        <div class="dialog-media${p.contain ? " contain" : ""}">
-            <img src="${esc(asset(p.image))}" alt="${esc(p.alt || p.title)}" width="1200" height="750">
-            ${p.extra ? `<img class="dialog-extra" src="${esc(asset(p.extra))}" alt="" width="1200" height="750">` : ""}
-        </div>
+        ${media(p, true, slideIndex)}
         <div class="dialog-body">
             <p class="meta">${meta(p)}</p>
             <h2>${esc(p.title)}</h2>
@@ -374,6 +442,8 @@ const renderProject = (index) => {
             ${tags(p)}
             ${p.links?.length ? actions(p, "") : ""}
         </div>`;
+    const dialogMedia = projectDialog.querySelector("[data-media-carousel]");
+    if (dialogMedia) setMedia(dialogMedia, slideIndex);
     projectDialog.querySelector(".dialog-counter").textContent = `${index + 1} / ${dialogOrder.length}`;
     projectDialog.querySelector(".dialog-nav").hidden = dialogOrder.length < 2;
     if (hasTracks) {
@@ -433,6 +503,7 @@ projectDialog.addEventListener("keydown", (event) => {
 projectDialog.addEventListener("close", () => {
     stopPreview();
     projectDialog.querySelectorAll(".track-player").forEach((audio) => audio.pause());
+    projectDialog.querySelectorAll("[data-media-carousel] video").forEach((video) => video.pause());
     const target = dialogOpener?.matches(".audio-art")
         ? dialogOpener.parentElement.querySelector(".audio-open")
         : dialogOpener?.querySelector("[data-open-project]") || dialogOpener;
@@ -440,7 +511,7 @@ projectDialog.addEventListener("close", () => {
 });
 
 document.addEventListener("click", (event) => {
-    if (event.target.closest("a, [data-audio-preview]")) return;
+    if (event.target.closest("a, [data-audio-preview], [data-media-step], .media-arrow")) return;
     const opener = event.target.closest("[data-open-project], [data-project], [data-open-audio]");
     if (!opener || projectDialog.contains(opener)) return;
     const id = opener.dataset.openProject || opener.dataset.project || opener.dataset.openAudio;
@@ -455,7 +526,8 @@ document.addEventListener("click", (event) => {
         index = 0;
     }
     dialogOpener = opener;
-    renderProject(index);
+    const mediaBox = opener.closest("[data-project], .audio-art")?.querySelector("[data-media-carousel]");
+    renderProject(index, mediaBox ? Number(mediaBox.dataset.mediaIndex || 0) : 0);
     stopPreview();
     projectDialog.showModal();
 });

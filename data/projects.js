@@ -104,6 +104,7 @@ window.PROJECTS = [
         summary: "A procedural mesh that behaves like chewing gum: vertices stick to whatever touches them, stretch and snap back past their elastic limit, with no softbody springs, joints or shaders.",
         tags: ["Unity", "C#", "Procedural mesh", "Tests"],
         image: "assets/projects/sticky-fabric.webp",
+        contain: true,
         video: "assets/projects/sticky-fabric.mp4",
         alt: "A capsule pushing through a stretchy fabric mesh in Unity",
         links: [
@@ -175,6 +176,7 @@ window.PROJECTS = [
         summary: "Five Unreal Engine projects: materials, a listen-server multiplayer FPS, pawn swapping with replication, farming NPCs driven by Behavior Trees and EQS, and a factory simulation in C++.",
         tags: ["Unreal", "C++", "Blueprints", "Multiplayer", "AI"],
         image: "assets/projects/ue-lab.webp",
+        contain: true,
         alt: "First-person shooter HUD in Unreal Engine with ammo and health bars",
         links: [
             { kind: "source", label: "Source code", url: "https://github.com/miguelrg14/UE_Lab" }
@@ -191,6 +193,7 @@ window.PROJECTS = [
         summary: "Battle Tower, a turn-based RPG, three board games, a library of generic data structures written from scratch and 29 exercises, with about 150 unit tests.",
         tags: ["C#", ".NET", "Tests"],
         image: "assets/projects/csharp-fundamentals.webp",
+        contain: true,
         alt: "Console window with the Battle Tower title in ASCII art",
         links: [
             { kind: "download", label: "Download", url: "https://github.com/miguelrg14/VS_CSharp-Fundamentals/releases/latest" },
@@ -208,6 +211,7 @@ window.PROJECTS = [
         summary: "Object-oriented programming through five desktop games, from a duel to two-player Blackjack with trump cards, with every rule kept in a unit-tested library.",
         tags: ["C#", ".NET", "OOP", "Tests"],
         image: "assets/projects/winforms-games.webp",
+        contain: true,
         alt: "Blackjack game window with two players' health and cards",
         links: [
             { kind: "download", label: "Download", url: "https://github.com/miguelrg14/VS_CSharp-WinForms-Games/releases/latest" },
@@ -239,6 +243,7 @@ window.PROJECTS = [
         summary: "Three static sites and an online furniture shop in PHP and MySQL with accounts, a cart and orders. The first version of this site started there.",
         tags: ["Web", "JavaScript", "PHP", "SQL"],
         image: "assets/projects/web-fundamentals.webp",
+        contain: true,
         alt: "Costa Verde tourism site with a photo of the Asturian coast",
         links: [
             { kind: "play", label: "Live demos", url: "https://miguelrg14.github.io/Web-Fundamentals_HTML-CSS-JS-PHP/" },
