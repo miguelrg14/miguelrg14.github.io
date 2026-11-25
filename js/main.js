@@ -36,12 +36,12 @@ function actions(p, size) {
 }
 
 function card(p) {
-    const search = p.tags.map((t) => t.toLowerCase()).join(" ");
-    return `<li class="card" data-tags="${esc(search)}">
+    const search = p.tags.map((t) => t.toLowerCase());
+    return `<li class="card" data-tags="${esc(JSON.stringify(search))}">
         ${media(p)}
         <h3>${esc(p.title)}</h3>
         <p class="meta">${meta(p)}</p>
-        <p>${esc(p.summary)}</p>
+        <p class="summary">${esc(p.summary)}</p>
         ${tags(p)}
         ${actions(p, "small")}
     </li>`;
@@ -50,13 +50,13 @@ function card(p) {
 function gameRow(p) {
     return `<article class="game" id="${esc(p.id)}">
         ${media(p)}
-        <div>
+        <div class="game-body">
             <h2>${esc(p.title)}</h2>
             <p class="meta">${meta(p)}</p>
             <p class="role">${esc(p.role)}</p>
-            <p>${esc(p.summary)}</p>
+            <p class="summary">${esc(p.summary)}</p>
             ${tags(p)}
-            ${actions(p, "")}
+            ${actions(p, "small")}
         </div>
     </article>`;
 }
@@ -71,46 +71,72 @@ document.querySelectorAll("[data-games]").forEach((box) => {
     box.innerHTML = window.PROJECTS.filter((p) => p.kind === "game").map(gameRow).join("");
 });
 
-// Code page: one section per group, with tag filters.
-document.querySelectorAll("[data-code]").forEach((box) => {
-    const groups = window.PROJECT_GROUPS.map((g) => {
-        const items = window.PROJECTS.filter((p) => (g.id === "games" ? p.kind === "game" : p.group === g.id));
+// Code page: category bar as the main filter, technology tags as a refinement.
+const codeBox = document.querySelector("[data-code]");
+if (codeBox) {
+    const [gamesGroup, ...otherGroups] = window.PROJECT_GROUPS;
+    const orderedGroups = [...otherGroups, gamesGroup];
+    const projectsIn = (g) => window.PROJECTS.filter((p) => (g.id === "games" ? p.kind === "game" : p.group === g.id));
+
+    codeBox.innerHTML = orderedGroups.map((g) => {
+        const items = projectsIn(g);
         if (!items.length) return "";
-        return `<section class="group" aria-labelledby="group-${g.id}">
+        return `<section class="group" data-group="${esc(g.id)}" aria-labelledby="group-${g.id}">
             <div>
                 <h2 id="group-${g.id}">${esc(g.title)}</h2>
                 <p class="group-intro">${esc(g.intro)}</p>
             </div>
             <ul class="cards">${items.map(card).join("")}</ul>
         </section>`;
-    });
-    // Games go last on this page: their own page already shows them first.
-    const [games, ...rest] = groups;
-    box.innerHTML = rest.join("") + games + `<p class="empty" hidden>Nothing with that tag yet.</p>`;
-});
+    }).join("") + `<p class="empty" hidden>Nothing with that combination yet.</p>`;
 
-document.querySelectorAll(".filters").forEach((filters) => {
-    const buttons = filters.querySelectorAll("button");
-    filters.addEventListener("click", (event) => {
-        const button = event.target.closest("button");
-        if (!button) return;
-        const tag = button.dataset.tag;
-        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+    const tabs = document.querySelector("[data-group-tabs]");
+    if (tabs) {
+        const options = [{ id: "all", title: "All", count: window.PROJECTS.length },
+            ...orderedGroups.map((g) => ({ id: g.id, title: g.title, count: projectsIn(g).length }))];
+        tabs.innerHTML = options.map((g) => `<button type="button" data-group="${esc(g.id)}" aria-pressed="${g.id === "all"}">${esc(g.title)} <span class="count">${g.count}</span></button>`).join("");
+    }
 
+    let activeGroup = "all";
+    let activeTag = "all";
+
+    const applyFilters = () => {
         let shown = 0;
-        document.querySelectorAll(".group").forEach((group) => {
+        codeBox.querySelectorAll(".group").forEach((group) => {
+            const groupMatch = activeGroup === "all" || group.dataset.group === activeGroup;
             let inGroup = 0;
             group.querySelectorAll(".card").forEach((c) => {
-                const match = tag === "all" || c.dataset.tags.split(" ").includes(tag);
+                const tags = JSON.parse(c.dataset.tags);
+                const match = groupMatch && (activeTag === "all" || tags.includes(activeTag));
                 c.hidden = !match;
                 if (match) inGroup++;
             });
             group.hidden = inGroup === 0;
             shown += inGroup;
         });
-        document.querySelector(".empty").hidden = shown > 0;
+        codeBox.querySelector(".empty").hidden = shown > 0;
+    };
+
+    tabs?.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-group]");
+        if (!button) return;
+        activeGroup = button.dataset.group;
+        tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+        applyFilters();
     });
-});
+
+    document.querySelectorAll(".filters").forEach((filters) => {
+        filters.addEventListener("click", (event) => {
+            const button = event.target.closest("button[data-tag]");
+            if (!button) return;
+            activeTag = button.dataset.tag;
+            filters.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+            applyFilters();
+        });
+    });
+
+    applyFilters();
+}
 
 // Short muted previews: load and play only while a card is hovered or focused.
 if (!reduceMotion) {
