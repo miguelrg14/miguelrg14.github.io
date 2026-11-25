@@ -28,7 +28,7 @@ function tags(p) {
 
 function actions(p, size) {
     const items = p.links.map((link, i) => {
-        const icon = link.kind === "play" ? `<svg class="icon" aria-hidden="true"><use href="${root}assets/icons.svg#play"></use></svg>` : "";
+        const icon = link.kind === "play" ? `<svg class="icon" aria-hidden="true"><use href="#play"></use></svg>` : "";
         const style = i === 0 ? "button" : "button ghost";
         return `<li><a class="${style} ${size}" href="${esc(link.url)}">${icon}${esc(link.label)}<span class="visually-hidden"> (${esc(p.title)})</span></a></li>`;
     });
