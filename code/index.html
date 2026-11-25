@@ -53,15 +53,15 @@
     </header>
 
     <main id="main">
-        <section aria-labelledby="title">
-            <h1 id="title">Code</h1>
-            <p class="lead">My repositories, grouped by what they're about. Most have a demo to play or a build to download.</p>
-        </section>
+        <h1 id="title" class="visually-hidden">Code</h1>
+        <p class="lead">My repositories, grouped by what they're about. Most have a demo to play or a build to download.</p>
 
         <nav class="group-tabs" data-group-tabs aria-label="Project categories"></nav>
 
-        <fieldset class="filters">
-            <legend>Show projects with (within the selected category)</legend>
+        <details class="tag-filters">
+            <summary>Filter by technology <span data-filter-status>All</span></summary>
+            <fieldset class="filters">
+                <legend class="visually-hidden">Show projects with (within the selected category)</legend>
                 <button type="button" data-tag="all" aria-pressed="true">All</button>
                 <button type="button" data-tag="unity" aria-pressed="false">Unity</button>
                 <button type="button" data-tag="unreal" aria-pressed="false">Unreal</button>
@@ -71,7 +71,8 @@
                 <button type="button" data-tag="multiplayer" aria-pressed="false">Multiplayer</button>
                 <button type="button" data-tag="tests" aria-pressed="false">Tests</button>
                 <button type="button" data-tag="web" aria-pressed="false">Web</button>
-        </fieldset>
+            </fieldset>
+        </details>
 
         <div data-code>
             <noscript><p>The repository list needs JavaScript. See them all on <a href="https://github.com/miguelrg14?tab=repositories">GitHub</a>.</p></noscript>

@@ -1,5 +1,5 @@
 // Renders the projects from data/projects.js, plays card previews on hover,
-// filters the Code page and opens the Art page lightbox.
+// filters the Code page and opens the Art lightbox and the project details dialog.
 
 const root = document.documentElement.dataset.root || "";
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -26,29 +26,32 @@ function tags(p) {
     return `<ul class="tags" aria-label="Technologies">${p.tags.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
 }
 
-function actions(p, size) {
+function actions(p, size, withDetails = false) {
     const items = p.links.map((link, i) => {
         const icon = link.kind === "play" ? `<svg class="icon" aria-hidden="true"><use href="#play"></use></svg>` : "";
         const style = i === 0 ? "button" : "button ghost";
         return `<li><a class="${style} ${size}" href="${esc(link.url)}">${icon}${esc(link.label)}<span class="visually-hidden"> (${esc(p.title)})</span></a></li>`;
     });
+    if (withDetails) {
+        items.push(`<li><button type="button" class="button ghost ${size}" data-open-project="${esc(p.id)}">Details<span class="visually-hidden"> of ${esc(p.title)}</span></button></li>`);
+    }
     return `<ul class="actions">${items.join("")}</ul>`;
 }
 
 function card(p) {
     const search = p.tags.map((t) => t.toLowerCase());
-    return `<li class="card" data-tags="${esc(JSON.stringify(search))}">
+    return `<li class="card" data-project="${esc(p.id)}" data-tags="${esc(JSON.stringify(search))}">
         ${media(p)}
         <h3>${esc(p.title)}</h3>
         <p class="meta">${meta(p)}</p>
         <p class="summary">${esc(p.summary)}</p>
         ${tags(p)}
-        ${actions(p, "small")}
+        ${actions(p, "small", true)}
     </li>`;
 }
 
 function gameRow(p) {
-    return `<article class="game" id="${esc(p.id)}">
+    return `<article class="game" id="${esc(p.id)}" data-project="${esc(p.id)}">
         ${media(p)}
         <div class="game-body">
             <h2>${esc(p.title)}</h2>
@@ -56,7 +59,7 @@ function gameRow(p) {
             <p class="role">${esc(p.role)}</p>
             <p class="summary">${esc(p.summary)}</p>
             ${tags(p)}
-            ${actions(p, "small")}
+            ${actions(p, "small", true)}
         </div>
     </article>`;
 }
@@ -125,12 +128,14 @@ if (codeBox) {
         applyFilters();
     });
 
+    const filterStatus = document.querySelector("[data-filter-status]");
     document.querySelectorAll(".filters").forEach((filters) => {
         filters.addEventListener("click", (event) => {
             const button = event.target.closest("button[data-tag]");
             if (!button) return;
             activeTag = button.dataset.tag;
             filters.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+            if (filterStatus) filterStatus.textContent = button.textContent;
             applyFilters();
         });
     });
@@ -160,6 +165,86 @@ if (!reduceMotion) {
         });
     });
 }
+
+// Project details: click a card (or its Details button) to see the full project.
+const projectsById = new Map((window.PROJECTS || []).map((p) => [p.id, p]));
+const projectDialog = document.createElement("dialog");
+projectDialog.className = "project-dialog";
+projectDialog.setAttribute("aria-label", "Project details");
+projectDialog.innerHTML = `<form method="dialog" class="dialog-top"><button type="submit" class="dialog-close" aria-label="Close project details">&times;</button></form>
+    <div class="dialog-content"></div>
+    <div class="dialog-nav">
+        <button type="button" class="dialog-arrow" data-dialog-step="-1" aria-label="Previous project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+        <span class="dialog-counter" aria-live="polite"></span>
+        <button type="button" class="dialog-arrow" data-dialog-step="1" aria-label="Next project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
+    </div>`;
+document.body.appendChild(projectDialog);
+let dialogOpener = null;
+let dialogOrder = [];
+let dialogIndex = 0;
+
+const renderProject = (index) => {
+    const p = projectsById.get(dialogOrder[index]);
+    if (!p) return;
+    dialogIndex = index;
+    projectDialog.querySelector(".dialog-content").innerHTML = `
+        <div class="dialog-media${p.contain ? " contain" : ""}">
+            <img src="${esc(asset(p.image))}" alt="${esc(p.alt || p.title)}" width="1200" height="750">
+        </div>
+        <div class="dialog-body">
+            <p class="meta">${meta(p)}</p>
+            <h2>${esc(p.title)}</h2>
+            ${p.role ? `<p class="role">${esc(p.role)}</p>` : ""}
+            <p class="summary">${esc(p.summary)}</p>
+            ${tags(p)}
+            ${actions(p, "")}
+        </div>`;
+    projectDialog.querySelector(".dialog-counter").textContent = `${index + 1} / ${dialogOrder.length}`;
+    projectDialog.querySelector(".dialog-nav").hidden = dialogOrder.length < 2;
+    const card = [...document.querySelectorAll("[data-project]")].find((el) => el.dataset.project === p.id);
+    if (card) dialogOpener = card;
+};
+
+const stepProject = (delta) => {
+    if (dialogOrder.length < 2) return;
+    renderProject((dialogIndex + delta + dialogOrder.length) % dialogOrder.length);
+};
+
+projectDialog.addEventListener("click", (event) => {
+    if (event.target === projectDialog) projectDialog.close();
+    const arrow = event.target.closest("[data-dialog-step]");
+    if (arrow) stepProject(Number(arrow.dataset.dialogStep));
+});
+projectDialog.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        stepProject(-1);
+    }
+    if (event.key === "ArrowRight") {
+        event.preventDefault();
+        stepProject(1);
+    }
+});
+projectDialog.addEventListener("close", () => {
+    const target = dialogOpener?.querySelector("[data-open-project]") || dialogOpener;
+    target?.focus();
+});
+
+document.addEventListener("click", (event) => {
+    if (event.target.closest("a")) return;
+    const opener = event.target.closest("[data-open-project], [data-project]");
+    if (!opener || projectDialog.contains(opener)) return;
+    const id = opener.dataset.openProject || opener.dataset.project;
+    if (!projectsById.has(id)) return;
+    const scope = opener.closest("[data-featured], [data-code], [data-games]") || document;
+    dialogOrder = [...scope.querySelectorAll("[data-project]")]
+        .filter((el) => el.getBoundingClientRect().height > 0)
+        .map((el) => el.dataset.project);
+    const index = dialogOrder.indexOf(id);
+    dialogOpener = opener;
+    renderProject(index < 0 ? 0 : index);
+    projectDialog.showModal();
+});
 
 // Art page lightbox.
 const lightbox = document.querySelector(".lightbox");
