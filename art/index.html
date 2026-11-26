@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Art | Miguel Rodríguez Gallego</title>
     <meta name="description" content="Illustration, pixel art, 3D models and drawings by Miguel Rodríguez Gallego.">
-    <meta name="theme-color" content="#e3f2ff">
+    <meta name="theme-color" content="#d6ebff">
     <link rel="canonical" href="https://miguelrg14.github.io/art/">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Art | Miguel Rodríguez Gallego">
@@ -20,7 +20,7 @@
     <script src="../data/thumbs.js" defer></script>
     <script src="../js/main.js" defer></script>
 </head>
-<body>
+<body data-zone="art">
 <svg xmlns="http://www.w3.org/2000/svg" data-icon-sprite aria-hidden="true">
 <!-- Copia en línea de assets/icons.svg para que los iconos funcionen también con file:// -->
 <!-- Brand icons from Simple Icons (CC0 1.0). LinkedIn and mail are simple shapes drawn for this site. -->
@@ -32,7 +32,9 @@
 <symbol id="x" viewBox="0 0 24 24"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></symbol>
 <symbol id="artstation" viewBox="0 0 24 24"><path d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/></symbol>
 <symbol id="linkedin" viewBox="0 0 24 24"><path d="M3 9h4v12H3zM5 2.5a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6zM9.5 9h3.8v1.7h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.6c0-1.4 0-3.1-1.9-3.1s-2.2 1.5-2.2 3V21h-4z"/></symbol>
-<symbol id="mail" viewBox="0 0 24 24"><path d="M2 5h20v14H2zm2 2v.6l8 5.2 8-5.2V7zm16 3-8 5.2L4 10v7h16z" fill-rule="evenodd"/></symbol>
+<symbol id="mail" viewBox="0 0 24 24"><path d="M2 5h20v14H2zm2 2v.6l8 5.2 8-5.2V7zm16 3-8 5.2L4 10v7h16z" fill-rule="evenodd"/></symbol>
+<symbol id="share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.8 15.8 6.2M8.2 13.2l7.6 4.6"/></g></symbol>
+
 <symbol id="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></symbol>
@@ -51,7 +53,10 @@
                     <li><a href="../music/index.html">Audio</a></li>
                 </ul>
             </nav>
-            <a class="button small" href="../contact/index.html">Contact</a>
+            <div class="bar-actions">
+                <a class="header-share" href="../share/index.html" aria-label="Share this portfolio" title="Share this portfolio"><svg class="icon" aria-hidden="true"><use href="#share"></use></svg></a>
+                <a class="button small" href="../contact/index.html"><svg class="icon" aria-hidden="true"><use href="#mail"></use></svg>Contact</a>
+            </div>
         </div>
     </header>
 
@@ -152,9 +157,12 @@
     </main>
 
     <footer class="site-footer">
-        <p>© Miguel Rodríguez Gallego, Vigo</p>
-        <p><a href="mailto:miguelrodriguezgallego1@gmail.com">miguelrodriguezgallego1@gmail.com</a></p>
-        <p><a href="https://github.com/miguelrg14/miguelrg14.github.io">Source of this site</a></p>
+        <p class="footer-copy">© Miguel Rodríguez Gallego, Vigo, Spain</p>
+        <p class="footer-center">
+            <a href="mailto:miguelrodriguezgallego1@gmail.com"><svg class="icon" aria-hidden="true"><use href="#mail"></use></svg>miguelrodriguezgallego1@gmail.com</a>
+            <a class="footer-share" href="../share/index.html" aria-label="Share this portfolio" title="Share this portfolio"><svg class="icon" aria-hidden="true"><use href="#share"></use></svg>Share</a>
+        </p>
+        <p class="footer-source"><a href="https://github.com/miguelrg14/miguelrg14.github.io"><svg class="icon" aria-hidden="true"><use href="#github"></use></svg>Source of this site</a></p>
     </footer>
 </body>
 </html>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Page not found | Miguel Rodríguez Gallego</title>
     <meta name="description" content="Page not found.">
-    <meta name="theme-color" content="#e3f2ff">
+    <meta name="theme-color" content="#d6ebff">
     <link rel="canonical" href="https://miguelrg14.github.io/404.html">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Page not found | Miguel Rodríguez Gallego">
@@ -20,6 +20,12 @@
     <script src="/js/main.js" defer></script>
 </head>
 <body>
+<svg xmlns="http://www.w3.org/2000/svg" data-icon-sprite aria-hidden="true">
+<symbol id="mail" viewBox="0 0 24 24"><path d="M2 5h20v14H2zm2 2v.6l8 5.2 8-5.2V7zm16 3-8 5.2L4 10v7h16z" fill-rule="evenodd"/></symbol>
+<symbol id="share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.8 15.8 6.2M8.2 13.2l7.6 4.6"/></g></symbol>
+<symbol id="github" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></symbol>
+
+</svg>
     <a class="skip" href="#main">Skip to content</a>
     <header class="site-header">
         <div class="bar">
@@ -33,7 +39,10 @@
                     <li><a href="/music/index.html">Audio</a></li>
                 </ul>
             </nav>
-            <a class="button small" href="/contact/index.html">Contact</a>
+            <div class="bar-actions">
+                <a class="header-share" href="/share/index.html" aria-label="Share this portfolio" title="Share this portfolio"><svg class="icon" aria-hidden="true"><use href="#share"></use></svg></a>
+                <a class="button small" href="/contact/index.html"><svg class="icon" aria-hidden="true"><use href="#mail"></use></svg>Contact</a>
+            </div>
         </div>
     </header>
 
@@ -44,9 +53,12 @@
     </main>
 
     <footer class="site-footer">
-        <p>© Miguel Rodríguez Gallego, Vigo</p>
-        <p><a href="mailto:miguelrodriguezgallego1@gmail.com">miguelrodriguezgallego1@gmail.com</a></p>
-        <p><a href="https://github.com/miguelrg14/miguelrg14.github.io">Source of this site</a></p>
+        <p class="footer-copy">© Miguel Rodríguez Gallego, Vigo, Spain</p>
+        <p class="footer-center">
+            <a href="mailto:miguelrodriguezgallego1@gmail.com"><svg class="icon" aria-hidden="true"><use href="#mail"></use></svg>miguelrodriguezgallego1@gmail.com</a>
+            <a class="footer-share" href="/share/index.html" aria-label="Share this portfolio" title="Share this portfolio"><svg class="icon" aria-hidden="true"><use href="#share"></use></svg>Share</a>
+        </p>
+        <p class="footer-source"><a href="https://github.com/miguelrg14/miguelrg14.github.io"><svg class="icon" aria-hidden="true"><use href="#github"></use></svg>Source of this site</a></p>
     </footer>
 </body>
 </html>

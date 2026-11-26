@@ -109,14 +109,15 @@ const groupIconFor = (id) => {
 };
 
 function decorateGroupHeads() {
-    const accents = ["", "accent-teal", "accent-indigo", "accent-steel"];
+    // Same hue as the page, just slightly different shades per subcategory.
+    const tones = ["", "tone-mid", "tone-deep"];
     const groups = [...document.querySelectorAll(".group[data-group]")];
     groups.forEach((group, index) => {
         const head = group.querySelector(".group-head");
         const title = head?.querySelector("h2");
         if (!head || !title || head.querySelector(".group-badge")) return;
-        const accent = accents[index % accents.length];
-        if (accent) head.classList.add(accent);
+        const tone = tones[index % tones.length];
+        if (tone) head.classList.add(tone);
         const badge = document.createElement("span");
         badge.className = "group-badge";
         badge.setAttribute("aria-hidden", "true");
@@ -205,7 +206,7 @@ function actions(p) {
 
 function card(p) {
     const search = p.tags.map((t) => t.toLowerCase());
-    return `<li class="card" data-project="${esc(p.id)}" data-tags="${esc(JSON.stringify(search))}">
+    return `<li class="card" data-project="${esc(p.id)}" data-zone="${esc(p.kind || "code")}" data-tags="${esc(JSON.stringify(search))}">
         ${media(p, false, 0, true)}
         <h3>${esc(p.title)}</h3>
         ${cardTags(p)}
@@ -230,14 +231,10 @@ function audioCard(a) {
     const video = a.coverVideo
         ? `<video muted loop playsinline preload="none" aria-hidden="true" data-src="${esc(asset(a.coverVideo))}"></video>`
         : "";
-    const play = a.preview
-        ? `<button type="button" class="audio-play" data-audio-preview="${esc(asset(a.preview))}" aria-label="Play preview of ${esc(a.title)}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#play"></use></svg></button>`
-        : "";
     return `<li class="audio-card" data-item>
         <div class="audio-art audio-cover" data-open-audio="${esc(a.id)}" style="--cover: url('${esc(asset(cover))}')">
             <span class="audio-backdrop" aria-hidden="true"></span>
             <img src="${esc(asset(cover))}" alt="" loading="lazy" decoding="async" width="600" height="600">${video}
-            ${play}
         </div>
         <button type="button" class="audio-open" data-project="${esc(a.id)}" aria-label="Details of ${esc(a.title)}">
             <span class="audio-title">${esc(a.title)}</span>
@@ -252,7 +249,7 @@ function zoneCard(p, zone) {
     const icon = groupIcons[zone.icon] || "";
     return `<li class="zone-item">
         <p class="zone-label zone-${esc(zone.icon)}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span>${esc(zone.label)}</span></p>
-        <article class="card zone-card" data-project="${esc(p.id)}">
+        <article class="card zone-card" data-project="${esc(p.id)}" data-zone="${esc(zone.icon)}">
             ${media(p, false, 0, true)}
             <h3>${esc(p.title)}</h3>
             ${cardTags(p)}
@@ -265,6 +262,7 @@ function zoneCard(p, zone) {
 // That lets its card join the same detail dialog and pager instead of using the lightbox.
 const homeArtProject = {
     id: "home-art",
+    kind: "art",
     title: "Illustration",
     meta: "Digital art",
     summary: "Character illustration drawn from scratch in Illustrator, exploring colour and shape.",
@@ -365,32 +363,136 @@ if (audioBox) {
     }).join("");
 }
 
-// One preview at a time; the round button toggles play/pause without opening the details.
-const previewPlayer = document.createElement("video");
-previewPlayer.preload = "none";
-previewPlayer.hidden = true;
-document.body.appendChild(previewPlayer);
-let previewButton = null;
-const stopPreview = () => {
-    previewPlayer.pause();
-    previewButton?.setAttribute("aria-pressed", "false");
-    previewButton = null;
+// One bottom bar owns the playlist. Tracks can come from any album, and the
+// queue keeps working after the details sheet is closed.
+const soundBar = document.createElement("div");
+soundBar.className = "soundbar";
+soundBar.setAttribute("role", "region");
+soundBar.setAttribute("aria-label", "Audio player");
+soundBar.hidden = true;
+soundBar.innerHTML = `
+    <img class="soundbar-cover" alt="" width="48" height="48" hidden>
+    <div class="soundbar-info">
+        <strong class="soundbar-title"></strong>
+        <span class="soundbar-meta"><span data-sound-meta></span><span class="soundbar-count" hidden></span></span>
+    </div>
+    <div class="soundbar-controls">
+        <button type="button" class="soundbar-skip" data-sound-step="-1" aria-label="Previous track"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5 8 12l10 7z"/></svg></button>
+        <button type="button" class="soundbar-toggle" aria-label="Play">
+            <svg class="icon soundbar-play" aria-hidden="true"><use href="#play"></use></svg>
+            <svg class="icon soundbar-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+        </button>
+        <button type="button" class="soundbar-skip" data-sound-step="1" aria-label="Next track"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l10 7L6 19z"/></svg></button>
+    </div>
+    <input class="soundbar-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek">
+    <span class="soundbar-time">0:00</span>
+    <button type="button" class="soundbar-close" aria-label="Close player">&times;</button>
+    <audio class="soundbar-player" preload="none"></audio>`;
+document.body.appendChild(soundBar);
+
+const soundPlayer = soundBar.querySelector(".soundbar-player");
+const soundToggle = soundBar.querySelector(".soundbar-toggle");
+const soundProgress = soundBar.querySelector(".soundbar-progress");
+const soundTime = soundBar.querySelector(".soundbar-time");
+let playlist = [];
+let playlistIndex = 0;
+let soundKey = "";
+let soundOnTrack = null;
+
+const soundPlaying = (on) => {
+    soundBar.classList.toggle("is-playing", on);
+    soundToggle.setAttribute("aria-label", on ? "Pause" : "Play");
 };
-document.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-audio-preview]");
-    if (!button) return;
-    if (previewButton === button && !previewPlayer.paused) {
-        stopPreview();
+
+const hideSoundBar = () => {
+    soundPlayer.pause();
+    soundBar.hidden = true;
+    soundKey = "";
+    playlist = [];
+    soundOnTrack = null;
+    soundBar.classList.remove("has-queue");
+    soundPlaying(false);
+};
+
+const formatTime = (seconds) => {
+    if (!Number.isFinite(seconds)) return "0:00";
+    const all = Math.floor(seconds);
+    return `${Math.floor(all / 60)}:${String(all % 60).padStart(2, "0")}`;
+};
+
+const setTrackInfo = (track, index) => {
+    soundBar.querySelector(".soundbar-title").textContent = track.title || "";
+    soundBar.querySelector("[data-sound-meta]").textContent = track.meta || "";
+    const count = soundBar.querySelector(".soundbar-count");
+    count.textContent = `${index + 1} / ${playlist.length}`;
+    count.hidden = playlist.length < 2;
+    const cover = soundBar.querySelector(".soundbar-cover");
+    if (track.cover) {
+        cover.src = asset(thumbOf(track.cover) || track.cover);
+        cover.hidden = false;
+    } else {
+        cover.removeAttribute("src");
+        cover.hidden = true;
+    }
+    soundBar.classList.toggle("has-queue", playlist.length > 1);
+};
+
+const playPlaylistIndex = (index) => {
+    if (index < 0 || index >= playlist.length) {
+        hideSoundBar();
         return;
     }
-    stopPreview();
-    previewPlayer.src = button.dataset.audioPreview;
-    previewButton = button;
-    button.setAttribute("aria-pressed", "true");
-    previewPlayer.play().catch(() => {
-        previewButton = null;
-        button.setAttribute("aria-pressed", "false");
+    playlistIndex = index;
+    const track = playlist[index];
+    const url = asset(track.src);
+    soundPlayer.pause();
+    soundKey = url;
+    soundPlayer.src = url;
+    setTrackInfo(track, index);
+    soundProgress.value = "0";
+    soundTime.textContent = "0:00";
+    soundBar.hidden = false;
+    soundPlayer.play().then(() => soundPlaying(true)).catch(() => soundPlaying(false));
+    soundOnTrack?.(index);
+};
+
+const playPlaylist = (tracks, index = 0, context = {}) => {
+    if (!tracks?.length) return;
+    playlist = tracks.map((track) => ({
+        src: track.src,
+        title: track.title,
+        meta: track.meta || context.meta || "",
+        cover: track.cover || context.cover || ""
+    }));
+    soundOnTrack = context.onTrack || null;
+    playPlaylistIndex(Math.min(Math.max(index, 0), playlist.length - 1));
+};
+
+soundToggle.addEventListener("click", () => {
+    if (soundPlayer.paused) soundPlayer.play().catch(() => soundPlaying(false));
+    else soundPlayer.pause();
+});
+soundBar.querySelectorAll("[data-sound-step]").forEach((button) => {
+    button.addEventListener("click", () => {
+        // Previous restarts the current track, like Spotify does.
+        if (button.dataset.soundStep === "-1" && playlistIndex === 0 && soundPlayer.currentTime > 3) {
+            soundPlayer.currentTime = 0;
+            return;
+        }
+        playPlaylistIndex(playlistIndex + Number(button.dataset.soundStep));
     });
+});
+soundBar.querySelector(".soundbar-close").addEventListener("click", hideSoundBar);
+soundPlayer.addEventListener("play", () => soundPlaying(true));
+soundPlayer.addEventListener("pause", () => soundPlaying(false));
+soundPlayer.addEventListener("timeupdate", () => {
+    const ratio = soundPlayer.duration ? soundPlayer.currentTime / soundPlayer.duration : 0;
+    soundProgress.value = String(ratio * 100);
+    soundTime.textContent = formatTime(soundPlayer.currentTime);
+});
+soundPlayer.addEventListener("ended", () => playPlaylistIndex(playlistIndex + 1));
+soundProgress.addEventListener("input", () => {
+    if (soundPlayer.duration) soundPlayer.currentTime = soundPlayer.duration * Number(soundProgress.value) / 100;
 });
 
 // Code page: category bar as the main filter, technology tags as a refinement.
@@ -652,6 +754,8 @@ async function openImage(opener, box, image) {
     if (!imageSlides.length) return;
     imageIndex = Math.max(imageSlides.indexOf(image), 0);
     imageOpener = opener;
+    const zone = image.closest("[data-zone]")?.dataset.zone || document.body.dataset.zone || "";
+    imageDialog.style.setProperty("--card-accent", zone ? `var(--zone-${zone})` : "var(--zone-accent)");
     await Promise.race([
         image.decode().catch(() => {}),
         new Promise((resolve) => setTimeout(resolve, 250))
@@ -784,6 +888,7 @@ document.querySelectorAll(".gallery [data-cover]").forEach((button) => {
     caption?.querySelector("strong")?.remove();
     projectsById.set(id, {
         id,
+        kind: "art",
         title: li.querySelector("figcaption strong")?.textContent.trim() || img.alt,
         meta: li.closest(".group")?.querySelector("h2")?.textContent.trim() || "Art",
         summary: caption?.textContent.trim() || "",
@@ -860,16 +965,17 @@ const renderProject = (index, mediaIndex = 0) => {
     const p = projectsById.get(dialogOrder[index]);
     if (!p) return;
     dialogIndex = index;
-    projectDialog.querySelectorAll(".track-player").forEach((audio) => audio.pause());
+    projectDialog.dataset.zone = p.isAudio ? "audio" : p.id === "home-art" ? "art" : p.kind || "code";
+    // Keep the sound bar above the modal dialog while the sheet is open.
+    if (soundBar.parentElement !== projectDialog) projectDialog.appendChild(soundBar);
     projectDialog.querySelectorAll("[data-media-carousel] video").forEach((video) => video.pause());
     const hasTracks = p.tracks?.length > 0;
     const trackList = hasTracks
         ? `<div class="dialog-tracks" aria-label="Tracks">${p.tracks.map((t, i) => `
-            <div class="track-row" data-track-row>
+            <div class="track-row" data-track-row data-track="${i}">
                 <span class="track-num">${String(i + 1).padStart(2, "0")}</span>
-                <span class="track-name">${esc(t.title)}</span>
                 <button type="button" class="track-trigger" data-track="${i}" aria-label="Play ${esc(t.title)}"><svg class="icon" aria-hidden="true"><use href="#play"></use></svg></button>
-                <audio class="track-player" controls preload="none" controlsList="nodownload" aria-label="${esc(t.title)}"></audio>
+                <span class="track-name">${esc(t.title)}</span>
             </div>`).join("")}</div>`
         : "";
     const preview = !hasTracks && p.preview
@@ -921,32 +1027,18 @@ const renderProject = (index, mediaIndex = 0) => {
     projectDialog.querySelector(".dialog-pager").hidden = dialogOrder.length < 2;
     if (hasTracks) {
         const rows = [...projectDialog.querySelectorAll("[data-track-row]")];
-        const players = rows.map((row) => row.querySelector(".track-player"));
-        let current = -1;
-        const playTrack = (i) => {
-            if (current >= 0) {
-                rows[current].classList.remove("is-current");
-                players[current].pause();
-            }
-            current = i;
-            const player = players[i];
-            if (!player.src) player.src = asset(p.tracks[i].src);
-            rows[i].classList.add("is-current");
-            player.play().catch(() => {});
-        };
-        rows.forEach((row, i) => row.querySelector(".track-trigger").addEventListener("click", () => {
-            if (current === i && !players[i].paused) {
-                players[i].pause();
+        const onTrack = (i) => rows.forEach((row, j) => row.classList.toggle("is-current", j === i));
+        const openTrack = (i) => playPlaylist(p.tracks, i, {
+            meta: p.title,
+            cover: p.image || p.cover,
+            onTrack
+        });
+        rows.forEach((row, i) => row.addEventListener("click", () => {
+            if (i === playlistIndex && soundKey === asset(p.tracks[i].src) && !soundPlayer.paused) {
+                soundPlayer.pause();
                 return;
             }
-            playTrack(i);
-        }));
-        players.forEach((player, i) => player.addEventListener("ended", () => {
-            if (i + 1 < rows.length) playTrack(i + 1);
-            else {
-                rows[i].classList.remove("is-current");
-                current = -1;
-            }
+            openTrack(i);
         }));
     }
     const card = [...document.querySelectorAll("[data-project]")].find((el) => el.dataset.project === p.id);
@@ -974,8 +1066,8 @@ projectDialog.addEventListener("keydown", (event) => {
     }
 });
 projectDialog.addEventListener("close", () => {
-    stopPreview();
-    projectDialog.querySelectorAll(".track-player").forEach((audio) => audio.pause());
+    soundOnTrack = null;
+    if (soundBar.parentElement === projectDialog) document.body.appendChild(soundBar);
     projectDialog.querySelectorAll("[data-media-carousel] video").forEach((video) => video.pause());
     const target = dialogOpener?.matches(".audio-art")
         ? dialogOpener.parentElement.querySelector(".audio-open")
@@ -984,7 +1076,7 @@ projectDialog.addEventListener("close", () => {
 });
 
 document.addEventListener("click", (event) => {
-    if (event.target.closest("a, [data-audio-preview], [data-media-step], img[data-media-open], .media-arrow")) return;
+    if (event.target.closest("a, [data-media-step], img[data-media-open], .media-arrow")) return;
     const opener = event.target.closest("[data-open-project], [data-project], [data-open-audio]");
     if (!opener || projectDialog.contains(opener)) return;
     const id = opener.dataset.openProject || opener.dataset.project || opener.dataset.openAudio;
@@ -1001,31 +1093,57 @@ document.addEventListener("click", (event) => {
     dialogOpener = opener;
     const mediaBox = opener.closest("[data-project], .audio-art")?.querySelector("[data-media-carousel]");
     renderProject(index, mediaBox ? Number(mediaBox.dataset.mediaIndex || 0) : 0);
-    stopPreview();
     projectDialog.showModal();
     requestAnimationFrame(updateDialogScrollbar);
 });
+
+// Clipboard helper shared by the contact form and the share page.
+// file:// pages often lack the async Clipboard API, so keep the legacy fallback.
+function copyFallback(text) {
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    const copied = document.execCommand("copy");
+    field.remove();
+    return copied;
+}
+
+function copyText(text) {
+    return navigator.clipboard?.writeText
+        ? navigator.clipboard.writeText(text).then(() => true, () => copyFallback(text))
+        : Promise.resolve(copyFallback(text));
+}
 
 // Contact form: copy the message so it works without an email app installed.
 const form = document.getElementById("contact-form");
 if (form) {
     const formStatus = form.querySelector("[data-form-status]");
-    const copyWithFallback = (text) => {
-        const field = document.createElement("textarea");
-        field.value = text;
-        field.setAttribute("readonly", "");
-        field.style.position = "fixed";
-        field.style.opacity = "0";
-        document.body.appendChild(field);
-        field.select();
-        const copied = document.execCommand("copy");
-        field.remove();
-        return copied;
-    };
-    const report = (copied) => {
-        formStatus.textContent = copied
-            ? "Message copied and your email app is opening. If it doesn't open, paste it into an email to miguelrodriguezgallego1@gmail.com."
-            : "Your email app is opening. If it doesn't open, your message is selected: press Ctrl+C and paste it into an email to miguelrodriguezgallego1@gmail.com.";
+    const report = (copied, links) => {
+        formStatus.replaceChildren();
+        formStatus.append(
+            copied
+                ? "Message copied. "
+                : "Your message is selected: press Ctrl+C. "
+        );
+        formStatus.append("Opening Gmail to send it. If it didn't open, use ");
+        Object.entries(links).forEach(([label, href], index, entries) => {
+            const link = document.createElement("a");
+            link.href = href;
+            link.textContent = label;
+            if (label !== "your email app") {
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+            }
+            formStatus.append(link);
+            if (index < entries.length - 1) {
+                formStatus.append(index < entries.length - 2 ? ", " : " or ");
+            }
+        });
+        formStatus.append(".");
         formStatus.classList.toggle("is-error", !copied);
         if (!copied) {
             form.elements.message.focus();
@@ -1039,15 +1157,49 @@ if (form) {
         const text = `Message from ${name}\n\n${message}`;
         const subject = encodeURIComponent(`Message from ${name}`);
         const body = encodeURIComponent(text);
-        const copyDone = navigator.clipboard?.writeText
-            ? navigator.clipboard.writeText(text).then(() => true, () => copyWithFallback(text))
-            : Promise.resolve(copyWithFallback(text));
-        const emailLink = document.createElement("a");
-        emailLink.href = `mailto:miguelrodriguezgallego1@gmail.com?subject=${subject}&body=${body}`;
-        emailLink.hidden = true;
-        document.body.appendChild(emailLink);
-        emailLink.click();
-        emailLink.remove();
-        copyDone.then(report);
+        const to = "miguelrodriguezgallego1@gmail.com";
+        const links = {
+            Gmail: `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`,
+            Outlook: `https://outlook.live.com/owa/?path=/mail/action/compose&to=${to}&subject=${subject}&body=${body}`,
+            "your email app": `mailto:${to}?subject=${subject}&body=${body}`
+        };
+        copyText(text).then((copied) => report(copied, links));
+        window.open(links.Gmail, "_blank", "noopener,noreferrer");
+    });
+}
+
+// Share page: open the native share sheet on touch devices, otherwise copy the link.
+const shareCopy = document.querySelector("[data-copy-link]");
+if (shareCopy) {
+    const status = document.querySelector("[data-copy-status]");
+    let resetTimer;
+    const showStatus = (message) => {
+        if (!status) return;
+        status.textContent = message;
+        clearTimeout(resetTimer);
+        if (message) {
+            resetTimer = setTimeout(() => {
+                status.textContent = "";
+            }, 2200);
+        }
+    };
+    const copyLink = () => {
+        copyText(shareCopy.dataset.copyLink).then((copied) => {
+            showStatus(copied ? "Copied!" : "Copy failed — copy the URL from the address bar.");
+        });
+    };
+    shareCopy.addEventListener("click", () => {
+        if (!document.documentElement.classList.contains("has-native-share")) {
+            copyLink();
+            return;
+        }
+        navigator.share({
+            title: shareCopy.dataset.shareTitle,
+            text: shareCopy.dataset.shareText,
+            url: shareCopy.dataset.copyLink
+        }).catch((error) => {
+            // Cancelling the sheet is not an error; a real failure falls back to copying.
+            if (error?.name !== "AbortError") copyLink();
+        });
     });
 }

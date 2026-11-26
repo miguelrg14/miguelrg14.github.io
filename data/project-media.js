@@ -14,10 +14,6 @@ window.PROJECT_MEDIA = {
             "alt": "Zombies swarming the stairs in Z Battle Yard"
         },
         {
-            "src": "assets/projects/readme/z-battle-yard/station-hall.jpg",
-            "alt": "Station hall in Z Battle Yard"
-        },
-        {
             "src": "assets/projects/readme/z-battle-yard/train-interior.jpg",
             "alt": "Train interior in Z Battle Yard"
         },
@@ -27,10 +23,6 @@ window.PROJECT_MEDIA = {
         }
     ],
     "ivers-tales": [
-        {
-            "src": "assets/projects/readme/ivers-tales/boss-fight.jpg",
-            "alt": "Iver fighting a boss"
-        },
         {
             "src": "assets/projects/readme/ivers-tales/library-room.jpg",
             "alt": "Library room in Ivers Tales"
@@ -45,10 +37,6 @@ window.PROJECT_MEDIA = {
         }
     ],
     "horror-project": [
-        {
-            "src": "assets/projects/readme/horror-project/01-main-menu.jpg",
-            "alt": "Main menu of Horror Project"
-        },
         {
             "src": "assets/projects/readme/horror-project/02-options.jpg",
             "alt": "Options menu of Horror Project"
@@ -68,10 +56,6 @@ window.PROJECT_MEDIA = {
     ],
     "sticky-fabric": [
         {
-            "src": "assets/projects/readme/sticky-fabric/unity-deformation.jpg",
-            "alt": "Sticky fabric deforming in Unity"
-        },
-        {
             "src": "assets/projects/readme/sticky-fabric/simulation.png",
             "alt": "Fabric profile and stretch over time"
         }
@@ -83,10 +67,6 @@ window.PROJECT_MEDIA = {
         }
     ],
     "unity-lab": [
-        {
-            "src": "assets/projects/readme/unity-lab/racing.jpg",
-            "alt": "Racing against AI drivers"
-        },
         {
             "src": "assets/projects/readme/unity-lab/racing-online.jpg",
             "alt": "Online race over TCP"
@@ -101,10 +81,6 @@ window.PROJECT_MEDIA = {
         }
     ],
     "ue-lab": [
-        {
-            "src": "assets/projects/readme/ue-lab/hud-ingame.webp",
-            "alt": "Multiplayer FPS HUD"
-        },
         {
             "src": "assets/projects/readme/ue-lab/overview.webp",
             "alt": "Pawn change overview"
@@ -146,10 +122,6 @@ window.PROJECT_MEDIA = {
             "alt": "Launcher with the five WinForms games"
         },
         {
-            "src": "assets/projects/readme/winforms-games/blackjack-demo.gif",
-            "alt": "Two-player Blackjack demo"
-        },
-        {
             "src": "assets/projects/readme/winforms-games/tower-demo.gif",
             "alt": "Climbing the elemental tower"
         },
@@ -164,19 +136,11 @@ window.PROJECT_MEDIA = {
     ],
     "csharp-networking": [
         {
-            "src": "assets/projects/readme/csharp-networking/chat-demo.gif",
-            "alt": "Chat server and two clients"
-        },
-        {
             "src": "assets/projects/readme/csharp-networking/threads-demo.gif",
             "alt": "Threads writing at different speeds"
         }
     ],
     "web-fundamentals": [
-        {
-            "src": "assets/projects/readme/web-fundamentals/costa-verde.jpg",
-            "alt": "Costa Verde tourism site"
-        },
         {
             "src": "assets/projects/readme/web-fundamentals/personal-site.jpg",
             "alt": "Personal site About page"
