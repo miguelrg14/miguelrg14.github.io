@@ -5,6 +5,47 @@
 const root = document.documentElement.dataset.root || "";
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+// Compact header: a menu button replaces the inline nav on very small screens.
+const siteHeader = document.querySelector(".site-header");
+const siteNav = document.querySelector(".site-nav");
+if (siteHeader && siteNav) {
+    siteNav.id = "site-menu";
+    const navToggle = document.createElement("button");
+    navToggle.type = "button";
+    navToggle.className = "nav-toggle";
+    navToggle.setAttribute("aria-label", "Open menu");
+    navToggle.setAttribute("aria-expanded", "false");
+    navToggle.setAttribute("aria-controls", "site-menu");
+    navToggle.innerHTML = "<span></span><span></span><span></span>";
+    siteHeader.querySelector(".bar")?.append(navToggle);
+
+    const setMenu = (open) => {
+        siteHeader.classList.toggle("nav-open", open);
+        navToggle.setAttribute("aria-expanded", String(open));
+        navToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    };
+    navToggle.addEventListener("click", () => {
+        const open = !siteHeader.classList.contains("nav-open");
+        setMenu(open);
+        if (open) siteNav.querySelector("a")?.focus({ preventScroll: true });
+    });
+    siteNav.addEventListener("click", (event) => {
+        if (event.target.closest("a")) setMenu(false);
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && siteHeader.classList.contains("nav-open")) {
+            setMenu(false);
+            navToggle.focus({ preventScroll: true });
+        }
+    });
+    document.addEventListener("click", (event) => {
+        if (siteHeader.classList.contains("nav-open") && !siteHeader.contains(event.target)) setMenu(false);
+    });
+    window.matchMedia("(min-width: 36.51rem)").addEventListener("change", (event) => {
+        if (event.matches) setMenu(false);
+    });
+}
+
 const esc = (text) =>
     String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -144,7 +185,7 @@ document.querySelectorAll("[data-games]").forEach((box) => {
     const games = (window.PROJECTS || []).filter((p) => p.kind === "game");
     const groups = [
         { id: "solo", title: "Solo", intro: "Designed and built on my own.", test: (p) => /solo/i.test(p.team || "") },
-        { id: "team", title: "With a team", intro: "Made with other students at ESNE and UDIT.", test: (p) => !/solo/i.test(p.team || "") }
+        { id: "team", title: "Team", intro: "Made with other students at ESNE and UDIT.", test: (p) => !/solo/i.test(p.team || "") }
     ];
     box.innerHTML = groups.map((g) => {
         const items = games.filter(g.test);
@@ -421,11 +462,13 @@ const imageDialog = document.createElement("dialog");
 imageDialog.className = "image-lightbox";
 imageDialog.setAttribute("aria-label", "Enlarged image");
 imageDialog.innerHTML = `<span class="lightbox-backdrop" aria-hidden="true"></span>
-    <img alt="" role="button" tabindex="0" aria-label="Close enlarged image" data-image-close>
+    <div class="lightbox-stage">
+        <button type="button" class="dialog-arrow lightbox-arrow lightbox-prev" data-image-step="-1" aria-label="Previous image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+        <img alt="" role="button" tabindex="0" aria-label="Close enlarged image" data-image-close>
+        <button type="button" class="dialog-arrow lightbox-arrow lightbox-next" data-image-step="1" aria-label="Next image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
+    </div>
     <div class="lightbox-bar">
-        <button type="button" class="dialog-arrow" data-image-step="-1" aria-label="Previous image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
         <p aria-live="polite"></p>
-        <button type="button" class="dialog-arrow" data-image-step="1" aria-label="Next image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
     </div>`;
 document.body.appendChild(imageDialog);
 let imageOpener = null;
