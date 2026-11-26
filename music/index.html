@@ -18,6 +18,7 @@
     <link rel="preload" href="../assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../css/style.css">
     <script src="../data/audio.js" defer></script>
+    <script src="../data/thumbs.js" defer></script>
     <script src="../js/main.js" defer></script>
 </head>
 <body>
@@ -33,7 +34,8 @@
 <symbol id="artstation" viewBox="0 0 24 24"><path d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/></symbol>
 <symbol id="linkedin" viewBox="0 0 24 24"><path d="M3 9h4v12H3zM5 2.5a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6zM9.5 9h3.8v1.7h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.6c0-1.4 0-3.1-1.9-3.1s-2.2 1.5-2.2 3V21h-4z"/></symbol>
 <symbol id="mail" viewBox="0 0 24 24"><path d="M2 5h20v14H2zm2 2v.6l8 5.2 8-5.2V7zm16 3-8 5.2L4 10v7h16z" fill-rule="evenodd"/></symbol>
-<symbol id="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></symbol>
 </svg>
 
@@ -60,7 +62,12 @@
         <div class="filter-bar">
             <a class="button small ghost filter-external" href="https://soundcloud.com/miguel_rg14" title="More on SoundCloud" aria-label="More on SoundCloud"><svg class="icon" aria-hidden="true"><use href="#soundcloud"></use></svg></a>
             <div class="filter-controls">
-                <nav class="group-tabs" data-section-tabs aria-label="Audio categories"></nav>
+                <details class="filter-menu group-filters">
+                    <summary><span class="visually-hidden">Filter by category: </span><span class="menu-label">Category:</span><span class="menu-label-short">Cat</span> <span data-category-status>All</span></summary>
+                    <fieldset class="filters" data-section-tabs data-legend="Show audio from one category">
+                        <legend class="visually-hidden">Show audio from one category</legend>
+                    </fieldset>
+                </details>
             </div>
         </div>
 

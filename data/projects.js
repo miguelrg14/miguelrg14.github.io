@@ -5,7 +5,7 @@
  *   kind      "game" shows it on the Games page (and its repo on the Code page);
  *             "code" shows it only on the Code page
  *   group     Code page section: graphics, ai, engines, dotnet, web
- *   featured  true to show it on the home page
+ *   featured  legacy flag; Home now derives one card per zone from this data
  *   video     optional short muted clip that plays when the card is hovered or focused
  *   links     kind is one of: play, itch, video, download, source
  */
@@ -26,7 +26,7 @@ window.PROJECTS = [
         title: "Z Battle Yard",
         year: "2022–2023",
         team: "Solo project",
-        role: "Everything: design, code, level art and audio",
+        role: "I handled the design, code, level art and audio",
         summary: "Endless first-person zombie wave shooter inspired by Call of Duty: Zombies. Defend an abandoned train station, earn points, buy weapons and perks, roll the Mystery Box and open new parts of the map. Made during my internship at ESNE Asturias and shown at CometCon Gijón 2023.",
         tags: ["Unity", "C#", "FPS", "URP"],
         image: "assets/projects/z-battle-yard.webp",
@@ -45,7 +45,7 @@ window.PROJECTS = [
         title: "Iver's Tales",
         year: "2023–2024",
         team: "Team of 7 at UDIT",
-        role: "Producer, lead of sound and UI",
+        role: "I produced the game and led sound and UI",
         summary: "3D dungeon crawler where Iver, a small robot cat, uses a hammer, a dash and three elemental spells to solve puzzles and beat the bosses of a gothic kingdom. I ran production (17 sprints, about 1,600 logged hours, publisher outreach) and programmed the menus, UI flow and audio. Shown at PS Talents and Match In Games 2024.",
         tags: ["Unity", "C#", "Production", "UI", "Audio"],
         image: "assets/projects/ivers-tales.webp",
@@ -63,7 +63,7 @@ window.PROJECTS = [
         title: "Horror Project",
         year: "2021–2022",
         team: "Team of 3 at ESNE",
-        role: "Audio system, menus and options, music, sound design and part of the 3D art",
+        role: "I built the audio system and menus, composed the music and made part of the 3D art",
         summary: "First-person horror prototype. Explore a dark house with a lantern that needs batteries, inspect objects in 3D and find the keys that open the three locks on the final door. Shown at CometCon Gijón 2022.",
         tags: ["Unity", "C#", "Audio", "UI"],
         image: "assets/projects/horror-project.webp",
@@ -80,7 +80,7 @@ window.PROJECTS = [
         featured: false,
         title: "Rope Monster",
         team: "Team of 3 at ESNE",
-        role: "Game design, UI and menus, level design and all music and sound effects",
+        role: "I designed the game and levels, built the UI and composed all music and sounds",
         summary: "Casual 2D mobile game: guide a little monster up a vertical level while it drags a friend hanging from a rope, dodging traps and enemies before the acid catches you. I designed the 9 levels and composed every track and sound effect from scratch.",
         tags: ["Unity", "C#", "Mobile", "Audio", "UI"],
         image: "assets/projects/rope-monster.webp",
@@ -100,7 +100,7 @@ window.PROJECTS = [
         title: "Last Grounds",
         year: "2026",
         team: "Solo project",
-        role: "Original GameMaker game and Unity 6 port",
+        role: "I rebuilt my original GameMaker game in Unity 6",
         summary: "Top-down pixel-art zombie horde shooter. Hold the last barricade, switch between three weapons and survive five days until rescue arrives. My first game, rebuilt in Unity 6 with the original art, sounds and game feel, plus six modes, five zombie types, local leaderboards and touch and gamepad controls.",
         tags: ["Unity", "C#", "Pixel art", "Mobile", "WebGL"],
         image: "assets/projects/readme/last-grounds/preview.png",

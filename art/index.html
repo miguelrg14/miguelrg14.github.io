@@ -17,6 +17,7 @@
     <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="../assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="../css/style.css">
+    <script src="../data/thumbs.js" defer></script>
     <script src="../js/main.js" defer></script>
 </head>
 <body>
@@ -32,7 +33,8 @@
 <symbol id="artstation" viewBox="0 0 24 24"><path d="M0 17.723l2.027 3.505h.001a2.424 2.424 0 0 0 2.164 1.333h13.457l-2.792-4.838H0zm24 .025c0-.484-.143-.935-.388-1.314L15.728 2.728a2.424 2.424 0 0 0-2.142-1.289H9.419L21.598 22.54l1.92-3.325c.378-.637.482-.919.482-1.467zm-11.129-3.462L7.428 4.858l-5.444 9.428h10.887z"/></symbol>
 <symbol id="linkedin" viewBox="0 0 24 24"><path d="M3 9h4v12H3zM5 2.5a2.3 2.3 0 1 1 0 4.6 2.3 2.3 0 0 1 0-4.6zM9.5 9h3.8v1.7h.1c.5-1 1.8-2 3.8-2 4 0 4.8 2.6 4.8 6V21h-4v-5.6c0-1.4 0-3.1-1.9-3.1s-2.2 1.5-2.2 3V21h-4z"/></symbol>
 <symbol id="mail" viewBox="0 0 24 24"><path d="M2 5h20v14H2zm2 2v.6l8 5.2 8-5.2V7zm16 3-8 5.2L4 10v7h16z" fill-rule="evenodd"/></symbol>
-<symbol id="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></symbol>
 </svg>
 
@@ -59,9 +61,14 @@
         <div class="filter-bar">
             <a class="button small ghost filter-external" href="https://www.artstation.com/miguel_rg14" title="More on ArtStation" aria-label="More on ArtStation"><svg class="icon" aria-hidden="true"><use href="#artstation"></use></svg></a>
             <div class="filter-controls">
-                <nav class="group-tabs" data-section-tabs aria-label="Art categories"></nav>
-                <details class="tag-filters">
-                    <summary>Filter by technology <span data-filter-status>All</span></summary>
+                <details class="filter-menu group-filters">
+                    <summary><span class="visually-hidden">Filter by category: </span><span class="menu-label">Category:</span><span class="menu-label-short">Cat</span> <span data-category-status>All</span></summary>
+                    <fieldset class="filters" data-section-tabs data-legend="Show artwork from one category">
+                        <legend class="visually-hidden">Show artwork from one category</legend>
+                    </fieldset>
+                </details>
+                <details class="filter-menu tag-filters">
+                    <summary><span class="visually-hidden">Filter by technology: </span><span class="menu-label">Technology:</span><span class="menu-label-short">Tech</span> <span data-filter-status>All</span></summary>
                     <fieldset class="filters">
                         <legend class="visually-hidden">Show artwork with (within the selected category)</legend>
                     </fieldset>
@@ -78,19 +85,19 @@
                 <ul class="gallery">
                     <li data-item data-tags='["illustrator", "drawing"]'>
                         <figure>
-                            <button type="button" aria-label="Enlarge Illustration" data-cover="cowboy-digital"><img src="../assets/art/cowboy-digital.webp" alt="Digital illustration of a green-skinned cowboy firing a revolver at sunset" width="1200" height="845" loading="lazy"></button>
+                            <button type="button" aria-label="Enlarge Illustration" data-cover="cowboy-digital"><img src="../assets/art/cowboy-digital.thumb.webp" data-full="../assets/art/cowboy-digital.webp" alt="Digital illustration of a green-skinned cowboy firing a revolver at sunset" width="1200" height="845" loading="lazy" decoding="async"></button>
                             <figcaption><strong>Illustration</strong>Drawn from scratch in Illustrator.</figcaption>
                         </figure>
                     </li>
                     <li data-item data-tags='["photoshop", "painting"]'>
                         <figure>
-                            <button type="button" aria-label="Enlarge Digital painting" data-cover="explorer"><img src="../assets/art/explorer.webp" alt="An explorer with goggles and a torch finding a chest in a cave" width="848" height="1200" loading="lazy"></button>
+                            <button type="button" aria-label="Enlarge Digital painting" data-cover="explorer"><img src="../assets/art/explorer.thumb.webp" data-full="../assets/art/explorer.webp" alt="An explorer with goggles and a torch finding a chest in a cave" width="848" height="1200" loading="lazy" decoding="async"></button>
                             <figcaption><strong>Digital painting</strong>Painted in Photoshop.</figcaption>
                         </figure>
                     </li>
                     <li data-item data-tags='["watercolour", "drawing"]'>
                         <figure>
-                            <button type="button" aria-label="Enlarge Character sheet" data-cover="cowboy-drawing"><img src="../assets/art/cowboy-drawing.webp" alt="Watercolour character sheet of a cowboy" width="1200" height="900" loading="lazy"></button>
+                            <button type="button" aria-label="Enlarge Character sheet" data-cover="cowboy-drawing"><img src="../assets/art/cowboy-drawing.thumb.webp" data-full="../assets/art/cowboy-drawing.webp" alt="Watercolour character sheet of a cowboy" width="1200" height="900" loading="lazy" decoding="async"></button>
                             <figcaption><strong>Character sheet</strong>Watercolour on paper: a cowboy and the same cowboy running through a western town.</figcaption>
                         </figure>
                     </li>
@@ -105,13 +112,13 @@
                 <ul class="gallery compact">
                     <li class="pixel" data-item data-tags='["pixel art"]'>
                         <figure>
-                            <button type="button" aria-label="Enlarge Isometric hospital" data-cover="hospital-pixel-art"><img src="../assets/art/hospital-pixel-art.png" alt="Isometric pixel art of a hospital and its garden" width="1900" height="1300" loading="lazy"></button>
+                            <button type="button" aria-label="Enlarge Isometric hospital" data-cover="hospital-pixel-art"><img src="../assets/art/hospital-pixel-art.thumb.webp" data-full="../assets/art/hospital-pixel-art.png" alt="Isometric pixel art of a hospital and its garden" width="1900" height="1300" loading="lazy" decoding="async"></button>
                             <figcaption><strong>Isometric hospital</strong>Pixel art.</figcaption>
                         </figure>
                     </li>
                     <li class="pixel" data-item data-tags='["pixel art"]'>
                         <figure>
-                            <button type="button" aria-label="Enlarge Zombie arcade" data-cover="zombie-game"><img src="../assets/art/zombie-game.png" alt="Top-down pixel art scene of a zombie arcade game" width="560" height="880" loading="lazy"></button>
+                            <button type="button" aria-label="Enlarge Zombie arcade" data-cover="zombie-game"><img src="../assets/art/zombie-game.thumb.webp" data-full="../assets/art/zombie-game.png" alt="Top-down pixel art scene of a zombie arcade game" width="560" height="880" loading="lazy" decoding="async"></button>
                             <figcaption><strong>Zombie arcade</strong>A pixel art arcade game about zombie hordes. I drew everything in it.</figcaption>
                         </figure>
                     </li>
@@ -126,13 +133,13 @@
                 <ul class="gallery compact">
                     <li data-item data-tags='["3d"]'>
                         <figure>
-                            <button type="button" aria-label="Enlarge Alcatraz, 3D model" data-cover="alcatraz-1"><img src="../assets/art/alcatraz-1.webp" alt="3D model of Alcatraz, a long cell block" width="1200" height="700" loading="lazy"></button>
+                            <button type="button" aria-label="Enlarge Alcatraz, 3D model" data-cover="alcatraz-1"><img src="../assets/art/alcatraz-1.thumb.webp" data-full="../assets/art/alcatraz-1.webp" alt="3D model of Alcatraz, a long cell block" width="1200" height="700" loading="lazy" decoding="async"></button>
                             <figcaption><strong>Alcatraz, 3D model</strong>Modelled, unwrapped and textured for a low-poly scene.</figcaption>
                         </figure>
                     </li>
                     <li data-item data-tags='["3d"]'>
                         <figure>
-                            <button type="button" aria-label="Enlarge Alcatraz, inside" data-cover="alcatraz-2"><img src="../assets/art/alcatraz-2.webp" alt="3D model of Alcatraz, cells on both sides of a corridor" width="1200" height="653" loading="lazy"></button>
+                            <button type="button" aria-label="Enlarge Alcatraz, inside" data-cover="alcatraz-2"><img src="../assets/art/alcatraz-2.thumb.webp" data-full="../assets/art/alcatraz-2.webp" alt="3D model of Alcatraz, cells on both sides of a corridor" width="1200" height="653" loading="lazy" decoding="async"></button>
                             <figcaption><strong>Alcatraz, inside</strong>Cells on both sides of the corridor.</figcaption>
                         </figure>
                     </li>
@@ -142,13 +149,6 @@
             <p class="empty" hidden>Nothing with that combination yet.</p>
         </div>
 
-        <dialog class="lightbox" aria-label="Enlarged picture">
-            <img src="../assets/art/cowboy-digital.webp" alt="">
-            <div class="lightbox-bar">
-                <p></p>
-                <form method="dialog"><button type="submit" class="button small">Close</button></form>
-            </div>
-        </dialog>
     </main>
 
     <footer class="site-footer">

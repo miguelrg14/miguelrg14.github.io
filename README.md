@@ -27,7 +27,8 @@ Every game and repository comes from [`data/projects.js`](data/projects.js). To 
 1. Put a cover image in `assets/projects/` (WebP, about 1200 px wide) and, optionally, a short muted MP4 that
    plays when the card is hovered.
 2. Copy an entry in `data/projects.js` and change its fields. `kind: "game"` puts it on the Games page;
-   `group` chooses its section on the Code page; `featured: true` shows it on the home page.
+   `group` chooses its section on the Code page. Home builds one card per zone automatically from the
+   first game, the first engine, the first artwork and the first audio item.
 
 ## Running it locally
 

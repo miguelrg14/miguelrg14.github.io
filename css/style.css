@@ -15,14 +15,23 @@
     --surface: #ffffff;     /* cards, panels, inputs */
     --line: #bcdcf5;        /* borders and dividers */
     --text: #17304f;        /* main text: deep navy */
-    --muted: #4a6488;       /* secondary text */
+    --muted: #405b7d;       /* secondary text, darkened for small sizes */
     --link: #1267b8;        /* links */
     --sky: #7cc4ff;         /* primary buttons, current page */
     --sky-soft: #cfe9ff;    /* hovers, tag fills */
     --header: #17304f;      /* sticky bar: deep navy, a clear layer over the pastel page */
     --sky-deep: #64b2f2;    /* slightly deeper blue: button hovers */
-    --pink: #f4a8cc;        /* pastel pink: current page, quote bars */
     --butter: #fff0b3;      /* pastel yellow: link-list highlight */
+    --card-gap: 0.9rem;     /* one rhythm for media, title, text and links */
+
+    /* Restrained cool inks for the category icons. */
+    --accent-teal-ink: #2d8b82;
+    --accent-indigo-ink: #5a67bd;
+    --accent-steel-ink: #4c6b8d;
+    --zone-game: #2d8b82;   /* teal: games */
+    --zone-code: #5a67bd;   /* indigo: code */
+    --zone-art: #a86f24;    /* amber: art */
+    --zone-audio: #2f6fa8;  /* blue: audio */
 
     --font: "Nunito", system-ui, sans-serif;
     --step--1: 0.8125rem;
@@ -32,6 +41,8 @@
     --step-3: clamp(1.9rem, 1.4rem + 2vw, 2.75rem);
 
     --wrap: 72rem;
+    --card: 17rem;          /* one fixed card size across every library grid */
+    --audio-card: 16rem;    /* square covers stay a touch smaller */
     --gutter: clamp(1.25rem, 3vw, 2rem);
     --bar: 3.75rem;
     --shadow: 0 1px 2px rgb(23 48 79 / 0.06), 0 8px 24px rgb(23 48 79 / 0.1);
@@ -50,9 +61,32 @@
 }
 
 html {
+    background: var(--bg);
     scroll-behavior: smooth;
     scroll-padding-top: calc(var(--bar) + 1rem);
     color-scheme: light;
+    scrollbar-color: var(--sky) var(--bg);
+    scrollbar-width: thin;
+}
+
+/* Chromium/WebKit: a soft pastel rail with a rounded sky thumb. */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+    border: 2px solid var(--bg);
+    border-radius: 999px;
+    background: var(--sky);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--sky-deep);
 }
 
 body {
@@ -255,7 +289,7 @@ main,
     inset: auto 0 -0.3rem;
     height: 2px;
     border-radius: 2px;
-    background: var(--pink);
+    background: var(--sky);
 }
 
 main {
@@ -323,8 +357,8 @@ body.home main {
 }
 
 .button[aria-current="page"] {
-    background: var(--pink);
-    border-color: var(--pink);
+    background: var(--sky);
+    border-color: var(--sky);
 }
 
 .actions {
@@ -334,6 +368,11 @@ body.home main {
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+.actions .button .icon {
+    width: 1rem;
+    height: 1rem;
 }
 
 .tags {
@@ -370,9 +409,9 @@ body.home main {
 
 .intro {
     display: grid;
-    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 13.5rem) minmax(0, 1fr);
     align-items: center;
-    gap: 2rem;
+    gap: 1.75rem;
 }
 
 .intro .lead {
@@ -474,13 +513,38 @@ body.home main {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    justify-content: space-between;
+    justify-content: center;
     gap: 0.5rem 2rem;
     margin-bottom: 1.25rem;
+    text-align: center;
 }
 
+/* Section titles read as eyebrows; category titles are the new library labels. */
 .section-head h2 {
     margin: 0;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.group-head h2 {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.section-head h2::after,
+.group-head h2::after {
+    content: "";
+    display: block;
+    width: 2.25rem;
+    height: 3px;
+    margin: 0.45rem auto 0;
+    border-radius: 999px;
+    background: var(--header);
 }
 
 .section-head p {
@@ -488,18 +552,32 @@ body.home main {
 }
 
 section + section {
-    margin-top: 3.5rem;
+    margin-top: 3rem;
 }
 
 /* ---------- Project cards (home, Code page) ---------- */
 
+/* Flex keeps the fixed card size and centers every row, including the last one. */
 .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 1.5rem 1.25rem;
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+.cards > *,
+.group .games > *,
+.gallery > * {
+    flex: 0 1 var(--card);
+    min-width: 0;
+}
+
+.audio-grid > * {
+    flex: 0 1 var(--audio-card);
+    min-width: 0;
 }
 
 .card {
@@ -509,7 +587,7 @@ section + section {
 
 .media {
     position: relative;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 4 / 3;
     margin-bottom: 0.75rem;
     overflow: hidden;
     border-radius: var(--radius);
@@ -545,17 +623,22 @@ section + section {
     object-fit: contain;
 }
 
-/* Cards leave a slim blurred margin so the backdrop stays visible, also on video hover. */
+/* Card previews fill the frame as far as their ratio allows; the blurred copy covers the rest. */
 .media:not(.dialog-media) img[data-media-slide],
 .media:not(.dialog-media) video[data-media-slide] {
-    inset: 4%;
-    width: 92%;
-    height: 92%;
-    border-radius: calc(var(--radius) * 0.6);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
 }
 
 .media video {
     object-fit: cover;
+}
+
+/* Card video previews keep the whole frame too; the blurred copy fills the letterbox. */
+.media:not(.dialog-media) video[data-media-slide] {
+    object-fit: contain;
 }
 
 .media.contain img {
@@ -584,7 +667,7 @@ section + section {
 .media-arrow {
     position: absolute;
     top: 50%;
-    z-index: 2;
+    z-index: 4;
     display: grid;
     place-items: center;
     width: 1.85rem;
@@ -640,7 +723,7 @@ img[data-media-open]:focus-visible,
     position: absolute;
     right: 0.4rem;
     bottom: 0.35rem;
-    z-index: 2;
+    z-index: 4;
     padding: 0.1rem 0.4rem;
     border-radius: 999px;
     background: rgb(23 48 79 / 0.68);
@@ -648,6 +731,80 @@ img[data-media-open]:focus-visible,
     font-size: 0.7rem;
     font-weight: 700;
     line-height: 1.3;
+}
+
+/* The artwork itself opens the details; external links sit below it. */
+.media-open {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    cursor: pointer;
+}
+
+.media-open:focus-visible {
+    outline: 3px solid var(--sky);
+    outline-offset: -3px;
+}
+
+/* The small Details pill makes the whole card's purpose obvious. */
+.card-links {
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0;
+}
+
+.card-details {
+    height: 1.55rem;
+    padding: 0 0.6rem;
+    border-width: 1px;
+    border-color: var(--sky);
+    background: var(--sky-soft);
+    font-size: 0.72rem;
+}
+
+.card-links > li {
+    display: flex;
+    align-items: center;
+}
+
+.card-details .icon {
+    width: 0.8rem;
+    height: 0.8rem;
+}
+
+:is(.card, .game):hover .card-details,
+.card-details:focus-visible {
+    border-color: var(--sky-deep);
+    background: var(--sky);
+}
+
+.icon-link {
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text);
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.icon-link:hover,
+.icon-link:focus-visible {
+    border-color: var(--sky);
+    background: var(--sky-soft);
+}
+
+.icon-link .icon {
+    width: 0.8rem;
+    height: 0.8rem;
+    fill: currentColor;
 }
 
 @media (hover: none) {
@@ -673,19 +830,29 @@ img[data-media-open]:focus-visible,
 
 .card p {
     font-size: 0.92rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
 }
 
-.card .meta {
-    margin-bottom: 0.5rem;
+.card .context,
+.game .context {
+    display: block;
+    overflow: hidden;
+    margin: 0 0 var(--card-gap);
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
-.card .tags {
-    margin-bottom: 0.75rem;
+.card .tags,
+.game .tags {
+    margin-bottom: var(--card-gap);
 }
 
-.card .actions {
-    margin-top: auto;
+.card .actions,
+.game .actions {
+    margin-top: 0;
 }
 
 /* ---------- Games page: compact itch.io-style cards ---------- */
@@ -711,24 +878,24 @@ img[data-media-open]:focus-visible,
 .game .media {
     margin: 0;
     border-radius: 0;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 4 / 3;
 }
 
 .game-body {
     display: flex;
     flex: 1;
     flex-direction: column;
-    padding: 0.75rem 0.85rem 0.85rem;
+    padding: 0.9rem 1rem 1rem;
 }
 
 .game h2 {
-    margin: 0 0 0.2rem;
+    margin: 0 0 0.35rem;
     font-size: 1.05rem;
-    line-height: 1.25;
+    line-height: 1.35;
 }
 
 .game .meta {
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--card-gap);
     font-size: 0.78rem;
 }
 
@@ -737,12 +904,12 @@ img[data-media-open]:focus-visible,
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    margin: 0 0 0.5rem;
+    margin: 0 0 var(--card-gap);
     padding-left: 0.6rem;
-    border-left: 3px solid var(--pink);
-    font-size: 0.78rem;
+    border-left: 3px solid var(--sky);
+    font-size: 0.82rem;
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.45;
 }
 
 .game .summary {
@@ -750,15 +917,15 @@ img[data-media-open]:focus-visible,
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    margin: 0 0 0.5rem;
+    margin: 0 0 var(--card-gap);
     color: var(--muted);
-    font-size: 0.8rem;
-    line-height: 1.35;
+    font-size: 0.82rem;
+    line-height: 1.45;
 }
 
 .game .tags {
     gap: 0.25rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--card-gap);
 }
 
 .game .tags li {
@@ -767,7 +934,6 @@ img[data-media-open]:focus-visible,
 
 .game .actions {
     gap: 0.3rem 0.4rem;
-    margin-top: auto;
 }
 
 .game .actions .button {
@@ -777,63 +943,12 @@ img[data-media-open]:focus-visible,
 
 /* ---------- Home: editorial highlights ---------- */
 
-/* Editorial showcase: one lead project, two compact rows beside it. */
-[data-featured] {
-    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    gap: 1rem;
-    align-items: stretch;
-    justify-content: stretch;
-}
-
-[data-featured] > .card:first-child {
-    grid-row: 1 / 3;
-    display: flex;
-    flex-direction: column;
-    max-width: none;
-}
-
-[data-featured] > .card:first-child .media {
-    aspect-ratio: 16 / 9;
-    margin-bottom: 0.85rem;
-}
-
-[data-featured] > .card:first-child h3 {
-    font-size: 1.3rem;
-}
-
-[data-featured] > .card:first-child .summary {
-    display: block;
-    overflow: visible;
-    max-width: none;
-    margin-bottom: 0.75rem;
-    -webkit-line-clamp: initial;
-    font-size: 0.9rem;
-}
-
-[data-featured] > .card:not(:first-child) {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 0.5rem;
-    max-width: none;
-}
-
-/* The tall thumbnail cropped 16:9 covers badly: the lead image is enough. */
-[data-featured] > .card:not(:first-child) .media {
-    display: none;
-}
-
-[data-featured] > .card:not(:first-child) .actions {
-    margin-top: 0;
-}
-
 :is([data-featured], [data-code]) .card {
     width: 100%;
     max-width: 24rem;
     min-width: 0;
     overflow: hidden;
-    padding: 0.75rem 0.85rem 0.85rem;
+    padding: 0.9rem 1rem 1rem;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
@@ -853,19 +968,23 @@ img[data-media-open]:focus-visible,
 }
 
 :is([data-featured], [data-code]) .media {
-    margin: -0.75rem -0.85rem 0.6rem;
+    margin: -0.9rem -1rem var(--card-gap);
     border-radius: 0;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 4 / 3;
 }
 
 :is([data-featured], [data-code]) .card h3 {
-    margin: 0 0 0.2rem;
+    margin: 0 0 0.35rem;
     font-size: 1.05rem;
     line-height: 1.25;
 }
 
+:is([data-featured], [data-code]) .card .meta,
+:is([data-featured], [data-code]) .card .summary {
+    margin-bottom: var(--card-gap);
+}
+
 :is([data-featured], [data-code]) .card .meta {
-    margin-bottom: 0.5rem;
     font-size: 0.78rem;
 }
 
@@ -874,15 +993,14 @@ img[data-media-open]:focus-visible,
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
-    margin: 0 0 0.5rem;
     color: var(--muted);
-    font-size: 0.8rem;
-    line-height: 1.35;
+    font-size: 0.82rem;
+    line-height: 1.45;
 }
 
 :is([data-featured], [data-code]) .card .tags {
     gap: 0.25rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--card-gap);
 }
 
 :is([data-featured], [data-code]) .card .tags li {
@@ -891,12 +1009,76 @@ img[data-media-open]:focus-visible,
 
 :is([data-featured], [data-code]) .card .actions {
     gap: 0.3rem 0.4rem;
-    margin-top: auto;
 }
 
 :is([data-featured], [data-code]) .card .actions .button {
     padding: 0.22em 0.55em;
     font-size: 0.72rem;
+}
+
+/* A single compact row of technologies keeps the card informative but short. */
+:is([data-featured], [data-code]) .card .card-tags,
+[data-games] .game .card-tags {
+    flex-wrap: nowrap;
+    overflow: hidden;
+    gap: 0.25rem;
+    margin: 0 0 0.5rem;
+}
+
+.card .card-tags li,
+.game .card-tags li {
+    flex: 0 1 auto;
+    max-width: 5.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-tags .tag-more {
+    font-weight: 800;
+}
+
+/* Home zone cards: the zone name sits just above the card, outside its frame. */
+[data-featured] .zone-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+[data-featured] .zone-label {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    gap: 0.35rem;
+    margin: 0;
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+[data-featured] .zone-label .icon {
+    width: 1.1em;
+    height: 1.1em;
+    stroke: currentColor;
+}
+
+/* Each zone keeps the same label ink; only the icon carries its colour. */
+[data-featured] .zone-label.zone-game .icon { color: var(--zone-game); }
+[data-featured] .zone-label.zone-code .icon { color: var(--zone-code); }
+[data-featured] .zone-label.zone-art .icon { color: var(--zone-art); }
+[data-featured] .zone-label.zone-music .icon { color: var(--zone-audio); }
+
+[data-featured] .zone-card .context {
+    margin-bottom: 0;
+}
+
+[data-featured] .zone-card .zone-link {
+    align-self: flex-start;
+    margin-top: 0;
 }
 
 /* ---------- Code page ---------- */
@@ -905,7 +1087,7 @@ img[data-media-open]:focus-visible,
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
-    gap: 0.5rem 1rem;
+    gap: 0.5rem;
     margin: 0 0 1.5rem;
 }
 
@@ -915,21 +1097,11 @@ img[data-media-open]:focus-visible,
     flex: 1 1 auto;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 1rem;
+    gap: 0.5rem;
     min-width: 0;
 }
 
-.filter-bar .group-tabs {
-    flex: 0 1 auto;
-    margin: 0;
-}
-
-/* Code has a second filter, so its tabs keep filling the remaining width. */
-.filter-bar:has(.tag-filters) .group-tabs {
-    flex: 1 1 auto;
-}
-
-.filter-bar .tag-filters {
+.filter-bar .filter-menu {
     flex: 0 0 auto;
     margin: 0;
 }
@@ -941,77 +1113,16 @@ img[data-media-open]:focus-visible,
     padding: 0.4em;
 }
 
-.group-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0 0 1.25rem;
-    padding: 0.8rem;
+/* Filters sit in a soft sky tray so the controls read apart from the cards below. */
+.filter-bar {
+    margin: 0 0 2rem;
+    padding: 0.55rem 0.7rem;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: var(--surface);
-}
-
-.group-tabs button {
-    padding: 0.45em 0.9em;
-    border: 2px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-    font-size: 0.88rem;
-    font-weight: 700;
-    line-height: 1.2;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, transform 0.15s;
-}
-
-.group-tabs button:hover {
-    border-color: var(--sky);
-    background: var(--sky-soft);
-    transform: translateY(-1px);
-}
-
-.group-tabs button[aria-pressed="true"] {
-    border-color: var(--sky);
-    background: var(--sky);
-}
-
-.group-tabs .count {
-    margin-left: 0.25em;
-    color: var(--muted);
-    font-weight: 600;
-}
-
-.group-tabs button[aria-pressed="true"] .count {
-    color: var(--text);
-}
-
-/* itch.io-style filters: pills directly on the page, no card container. */
-.filter-bar {
-    margin-bottom: 1rem;
-}
-
-.group-tabs {
-    padding: 0;
-    border: 0;
-    background: none;
-}
-
-.group-tabs button {
-    border-width: 1px;
-    background: transparent;
-}
-
-.group-tabs button:hover {
     background: var(--sky-soft);
 }
 
-.group-tabs button[aria-pressed="true"] {
-    background: var(--sky);
-}
-
-.tag-filters {
+.filter-menu {
     position: relative;
     margin: 0 0 1.5rem;
     padding: 0.8rem;
@@ -1020,7 +1131,7 @@ img[data-media-open]:focus-visible,
     background: var(--surface);
 }
 
-.tag-filters > summary {
+.filter-menu > summary {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -1038,54 +1149,62 @@ img[data-media-open]:focus-visible,
     transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
-.tag-filters > summary:hover {
+.filter-menu > summary:hover {
     border-color: var(--sky);
     background: var(--sky-soft);
     transform: translateY(-1px);
 }
 
-.tag-filters[open] > summary {
+.filter-menu[open] > summary {
     border-color: var(--sky);
     background: var(--sky);
 }
 
-/* Same bare pill style for the technology filter. */
-.tag-filters {
+/* Both menus share the same bare pill style. */
+.filter-menu {
     padding: 0;
     border: 0;
     background: none;
 }
 
-.tag-filters > summary {
+.filter-menu > summary {
     border-width: 1px;
     background: transparent;
 }
 
-/* The wrapped filter sits on the left, so open the panel to the right. */
-.tag-filters[open] .filters {
+.filter-bar .filter-menu > summary {
+    background: var(--surface);
+}
+
+/* Category opens to the left; technology opens to the right. */
+.group-filters[open] .filters {
     left: 0;
     right: auto;
 }
 
-.tag-filters > summary::-webkit-details-marker {
+.filter-menu .menu-label-short {
     display: none;
 }
 
-.tag-filters > summary::after {
+.filter-menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.filter-menu > summary::after {
     content: "\25BE";
     font-size: 0.75rem;
     transition: transform 0.15s;
 }
 
-.tag-filters[open] {
+.filter-menu[open] {
     z-index: 5;
 }
 
-.tag-filters[open] > summary::after {
+.filter-menu[open] > summary::after {
     transform: rotate(180deg);
 }
 
-.tag-filters[open] .filters {
+.filter-menu[open] .filters {
     position: absolute;
     top: calc(100% + 0.5rem);
     right: 0;
@@ -1100,7 +1219,8 @@ img[data-media-open]:focus-visible,
     box-shadow: 0 10px 24px rgb(23 48 79 / 0.18);
 }
 
-.tag-filters [data-filter-status] {
+.filter-menu [data-category-status],
+.filter-menu [data-filter-status] {
     padding: 0 0.5em;
     border-radius: 999px;
     background: var(--sky-soft);
@@ -1108,23 +1228,34 @@ img[data-media-open]:focus-visible,
     font-weight: 700;
 }
 
-.tag-filters[open] [data-filter-status] {
+.filter-menu[open] [data-category-status],
+.filter-menu[open] [data-filter-status] {
     background: var(--surface);
 }
 
-.tag-filters .filters {
+.filter-menu .filters {
     margin: 0;
     gap: 0.3rem;
 }
 
-.tag-filters .filters legend {
+.filter-menu .filters legend {
     margin: 0;
 }
 
-.tag-filters .filters button {
+.filter-menu .filters button {
     padding: 0.28em 0.7em;
     border-width: 1px;
     font-size: 0.8rem;
+}
+
+.filter-menu .count {
+    margin-left: 0.25em;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.filter-menu button[aria-pressed="true"] .count {
+    color: var(--text);
 }
 
 .filters {
@@ -1162,6 +1293,17 @@ img[data-media-open]:focus-visible,
     border-color: var(--sky);
 }
 
+/* Category is the primary filter, so its active pill echoes the navy header. */
+.group-filters button[aria-pressed="true"] {
+    background: var(--header);
+    border-color: var(--header);
+    color: #fff;
+}
+
+.group-filters button[aria-pressed="true"] .count {
+    color: rgb(255 255 255 / 0.8);
+}
+
 .group[hidden] {
     display: none;
 }
@@ -1170,6 +1312,7 @@ img[data-media-open]:focus-visible,
     color: var(--muted);
     margin-bottom: 1rem;
     font-size: 0.9rem;
+    text-align: center;
 }
 
 .empty {
@@ -1179,17 +1322,13 @@ img[data-media-open]:focus-visible,
 /* ---------- Art page ---------- */
 
 .gallery {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 1.5rem 1.25rem;
     margin: 0;
     padding: 0;
     list-style: none;
-}
-
-/* Two-piece groups fill the row from the left edge, with no empty column. */
-.gallery.compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .gallery li {
@@ -1206,7 +1345,7 @@ img[data-media-open]:focus-visible,
     border: 0;
     border-radius: var(--radius);
     background: var(--surface);
-    cursor: zoom-in;
+    cursor: pointer;
     transition: transform 0.18s, box-shadow 0.18s;
 }
 
@@ -1223,31 +1362,31 @@ img[data-media-open]:focus-visible,
 
 /* Blurred covers come from data attributes so the HTML has no inline styles. */
 .gallery button[data-cover="cowboy-digital"]::before {
-    background-image: url("../assets/art/cowboy-digital.webp");
+    background-image: url("../assets/art/cowboy-digital.thumb.webp");
 }
 
 .gallery button[data-cover="explorer"]::before {
-    background-image: url("../assets/art/explorer.webp");
+    background-image: url("../assets/art/explorer.thumb.webp");
 }
 
 .gallery button[data-cover="cowboy-drawing"]::before {
-    background-image: url("../assets/art/cowboy-drawing.webp");
+    background-image: url("../assets/art/cowboy-drawing.thumb.webp");
 }
 
 .gallery button[data-cover="hospital-pixel-art"]::before {
-    background-image: url("../assets/art/hospital-pixel-art.png");
+    background-image: url("../assets/art/hospital-pixel-art.thumb.webp");
 }
 
 .gallery button[data-cover="zombie-game"]::before {
-    background-image: url("../assets/art/zombie-game.png");
+    background-image: url("../assets/art/zombie-game.thumb.webp");
 }
 
 .gallery button[data-cover="alcatraz-1"]::before {
-    background-image: url("../assets/art/alcatraz-1.webp");
+    background-image: url("../assets/art/alcatraz-1.thumb.webp");
 }
 
 .gallery button[data-cover="alcatraz-2"]::before {
-    background-image: url("../assets/art/alcatraz-2.webp");
+    background-image: url("../assets/art/alcatraz-2.thumb.webp");
 }
 
 .gallery button:hover {
@@ -1375,8 +1514,9 @@ img[data-media-open]:focus-visible,
     position: relative;
     z-index: 2;
     flex: 0 0 auto;
-    border-top: 1px solid var(--line);
-    background: rgb(255 255 255 / 0.94);
+    border-top: 1px solid var(--sky);
+    background: var(--sky-soft);
+    color: var(--text);
 }
 
 .image-lightbox .lightbox-bar[hidden] {
@@ -1386,7 +1526,7 @@ img[data-media-open]:focus-visible,
 .image-lightbox .lightbox-bar p {
     flex: 1;
     max-width: none;
-    color: var(--muted);
+    color: var(--text);
     font-size: 0.85rem;
     font-weight: 700;
     text-align: center;
@@ -1434,110 +1574,320 @@ img[data-media-open]:focus-visible,
     border-radius: var(--radius);
     background: var(--surface);
     color: var(--text);
-    overflow: auto;
+    overflow: hidden;
     container-type: inline-size;
     container-name: project;
+}
+
+/* The native bar is hidden inside the sheet; ours floats above the edge. */
+.dialog-scroll {
+    max-height: 92vh;
+    overflow: auto;
+    scrollbar-width: none;
+}
+
+.dialog-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.dialog-scrollbar {
+    position: absolute;
+    z-index: 9;
+    top: 0.4rem;
+    right: 0;
+    bottom: 0.4rem;
+    width: 6px;
+    border-radius: 999px;
+    cursor: pointer;
+    touch-action: none;
+}
+
+.dialog-scrollbar[hidden] {
+    display: none;
+}
+
+.dialog-scrollbar span {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    border-radius: 999px;
+    background: rgb(23 48 79 / 0.22);
+    transition: background 0.15s;
+}
+
+.dialog-scrollbar:hover span,
+.dialog-scrollbar span:active {
+    background: var(--sky-deep);
+}
+
+.dialog-content {
+    position: relative;
 }
 
 .project-dialog::backdrop {
     background: rgb(23 48 79 / 0.75);
 }
 
+/* Close and project pager sit on the image, so no toolbar is needed. */
+.dialog-image-controls {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.dialog-image-controls > * {
+    pointer-events: auto;
+}
+
+.dialog-pager {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 6.25rem;
+    gap: 0.2rem;
+    padding: 0.1rem 0.25rem;
+    border: 1px solid var(--sky);
+    border-radius: 999px;
+    background: var(--sky-soft);
+    color: var(--text);
+}
+
+.dialog-step {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.dialog-step:hover,
+.dialog-step:focus-visible {
+    background: rgb(255 255 255 / 0.2);
+}
+
+.dialog-pager .dialog-chevron {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.dialog-close-form {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+}
+
+.dialog-arrow {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid rgb(23 48 79 / 0.35);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.6);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.dialog-arrow:hover,
+.dialog-arrow:focus-visible {
+    border-color: var(--text);
+    background: rgb(255 255 255 / 0.85);
+}
+
+.dialog-chevron {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.dialog-counter {
+    color: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
 .dialog-close {
     display: grid;
     place-items: center;
-    width: 2rem;
-    height: 2rem;
+    width: 1.75rem;
+    height: 1.75rem;
     padding: 0;
-    border: 1px solid var(--line);
+    border: 1px solid rgb(255 255 255 / 0.7);
     border-radius: 50%;
-    background: var(--surface);
-    color: var(--text);
-    font-size: 1.35rem;
-    line-height: 1;
+    background: rgb(23 48 79 / 0.62);
+    color: #fff;
     cursor: pointer;
 }
 
-.dialog-close:hover {
-    border-color: var(--sky);
-    background: var(--sky-soft);
+.dialog-close svg {
+    display: block;
+    width: 0.8rem;
+    height: 0.8rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.6;
+    stroke-linecap: round;
 }
 
-.dialog-topgrid {
+.dialog-close:hover,
+.dialog-close:focus-visible {
+    border-color: #fff;
+    background: rgb(255 255 255 / 0.2);
+}
+
+/* The image leads; the title and its links sit right underneath. */
+.dialog-hero {
+    position: relative;
+    background: var(--surface);
+}
+
+/* Reserve the tallest title block so the pager never shifts between projects. */
+.dialog-heading {
     display: grid;
-    grid-template-columns: minmax(22rem, 1fr) minmax(0, 1.05fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
+    column-gap: 1rem;
+    min-height: 6.875rem;
+    padding: 1.15rem 1.5rem 0.25rem;
 }
 
-.dialog-intro {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+.dialog-title {
     min-width: 0;
-    padding: 1.5rem;
 }
 
-.dialog-intro h2 {
-    margin: 0;
-    font-size: 1.6rem;
-}
-
-.dialog-intro .meta {
-    margin: 0;
+.dialog-heading .meta {
+    margin: 0 0 0.3rem;
     color: var(--muted);
     font-size: 0.9rem;
 }
 
-.dialog-intro .role {
+.dialog-heading h2 {
     margin: 0;
+    font-size: 1.7rem;
+    line-height: 1.15;
+}
+
+.dialog-heading .role {
+    margin: 0.4rem 0 0;
     padding-left: 0.75rem;
     border-left: 3px solid var(--sky);
     font-size: 0.9rem;
     font-weight: 700;
 }
 
-.dialog-intro .summary {
+/* Compact sky-tinted pills close the sheet after the project information. */
+.dialog-links {
+    margin: 0 1.5rem 1.5rem;
+}
+
+.dialog-links .actions {
+    justify-content: flex-start;
+}
+
+.dialog-links .actions > li {
+    flex: 0 0 6.25rem;
+    min-width: 0;
+}
+
+.dialog-links .button {
+    justify-content: center;
+    width: 100%;
+    min-height: 2rem;
+    padding: 0.3rem 0.5rem;
+    border-width: 1px;
+    border-color: var(--sky);
+    background: var(--sky-soft);
+    font-size: 0.8rem;
+}
+
+.dialog-links .button:hover {
+    border-color: var(--sky-deep);
+    background: var(--sky-deep);
+}
+
+.dialog-links .button .icon {
+    width: 0.9rem;
+    height: 0.9rem;
+}
+
+/* A short overview on the left; technology and extras get their own column. */
+.dialog-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    align-items: start;
+    gap: 0.75rem 2rem;
+    padding: 0.25rem 1.5rem 1.5rem;
+}
+
+.dialog-block {
+    min-width: 0;
+}
+
+.dialog-block h3 {
+    margin: 0 0 0.4rem;
+    color: var(--link);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.dialog-overview .summary {
     margin: 0;
     color: var(--muted);
-    line-height: 1.55;
+    line-height: 1.6;
 }
 
-.dialog-intro .tags {
+/* Even gaps between the right-hand blocks, whatever each one contains. */
+.dialog-side {
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+}
+
+.dialog-side .tags,
+.dialog-side .dialog-tracks,
+.dialog-side .dialog-preview,
+.dialog-side .track-note {
     margin: 0;
 }
 
-.dialog-intro .actions {
-    margin-top: auto;
+.dialog-side .track-name {
+    max-width: none;
 }
 
 .dialog-media {
     position: relative;
-    align-self: center;
+    width: 100%;
+    height: min(52vh, 30rem);
     margin: 0;
-    aspect-ratio: 16 / 9;
-    max-height: min(48vh, 22rem);
     overflow: hidden;
-    background: var(--line);
+    background: var(--surface);
 }
 
-.dialog-media img {
+.dialog-media img,
+.dialog-media video {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
-}
-
-.dialog-media.contain img {
-    object-fit: contain;
-}
-
-.dialog-media:has(.dialog-extra) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-}
-
-.dialog-media .dialog-extra {
-    display: block;
 }
 
 .dialog-preview {
@@ -1559,9 +1909,9 @@ img[data-media-open]:focus-visible,
 
 .track-row {
     display: grid;
-    grid-template-columns: 2rem auto 1.5rem minmax(0, 1fr);
+    grid-template-columns: 2rem minmax(0, 1fr) 1.5rem;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.35rem 0.5rem;
     min-height: 3rem;
     padding: 0.25rem 0.75rem;
     background: var(--surface);
@@ -1618,55 +1968,108 @@ img[data-media-open]:focus-visible,
     height: 1rem;
 }
 
-/* The controls share the same line, so the row keeps its height and no gap appears. */
+/* The player replaces the title and play button inside the same fixed row. */
 .track-player {
     display: none;
+    grid-column: 2 / -1;
     width: 100%;
     height: 2.5rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    accent-color: var(--sky-deep);
+}
+
+.track-row.is-current .track-name,
+.track-row.is-current .track-trigger {
+    display: none;
 }
 
 .track-row.is-current .track-player {
     display: block;
 }
 
-/* Medium and narrow dialogs stack the intro above the media. */
-@container project (max-width: 44rem) {
-    .dialog-topgrid {
+/* Soft Chromium skin for the native controls: white pill, navy time labels. */
+.track-player::-webkit-media-controls-enclosure {
+    border-radius: 999px;
+    background: transparent;
+}
+
+.track-player::-webkit-media-controls-panel {
+    border-radius: 999px;
+    background: var(--surface);
+}
+
+.track-player::-webkit-media-controls-current-time-display,
+.track-player::-webkit-media-controls-time-remaining-display {
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 0.7rem;
+}
+
+/* Audio players live in their own full-width band under the project text. */
+.dialog-player-block {
+    margin: 0 1.5rem 1.25rem;
+}
+
+.dialog-player-block .dialog-tracks {
+    margin-bottom: 0;
+}
+
+.dialog-player-block .track-name {
+    max-width: none;
+}
+
+/* The two text columns stack before the dialog gets cramped. */
+@container project (max-width: 48rem) {
+    .dialog-body {
         grid-template-columns: 1fr;
-    }
-
-    .dialog-intro {
-        padding: 1rem 1.25rem;
-    }
-
-    .dialog-intro .tags {
-        margin-top: 0;
-    }
-
-    .dialog-media {
-        max-height: min(42vh, 20rem);
+        gap: 1rem;
     }
 }
 
-/* Narrow dialogs (mobile): give the player its own line only while playing,
-   so there is no reserved blank space in the idle rows. */
+@container project (max-width: 44rem) {
+    /* Long roles wrap here, so the pager gets its own fixed row above the title. */
+    .dialog-heading {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        row-gap: 0.5rem;
+        padding: 1rem 1.25rem 0.5rem;
+    }
+
+    .dialog-pager {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: end;
+    }
+
+    .dialog-title {
+        grid-row: 2;
+    }
+
+    .dialog-body {
+        padding: 0.5rem 1.25rem 1.25rem;
+    }
+
+    .dialog-links,
+    .dialog-player-block {
+        margin-inline: 1.25rem;
+    }
+
+    .dialog-links .actions {
+        justify-content: flex-start;
+    }
+
+    .dialog-media {
+        height: auto;
+        aspect-ratio: 4 / 3;
+    }
+}
+
+/* Narrow dialogs: let long track titles use the whole row. */
 @container project (max-width: 34rem) {
-    .track-row {
-        grid-template-columns: 2rem minmax(0, 1fr) 1.5rem;
-        row-gap: 0;
-    }
-
-    .track-row.is-current {
-        row-gap: 0.35rem;
-    }
-
     .track-name {
         max-width: none;
-    }
-
-    .track-player {
-        grid-column: 1 / -1;
-        height: 2.25rem;
     }
 }
 
@@ -1676,99 +2079,12 @@ img[data-media-open]:focus-visible,
     font-size: 0.9rem;
 }
 
-.dialog-nav {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 1rem;
-    border-top: 1px solid var(--line);
-    background: var(--surface);
-}
-
-.dialog-pager {
-    grid-column: 2;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    justify-self: center;
-}
-
-.dialog-close-form {
-    grid-column: 3;
-    justify-self: end;
-}
-
-.dialog-arrow {
-    display: grid;
-    place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 50%;
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-}
-
-.dialog-chevron {
-    width: 1rem;
-    height: 1rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.dialog-arrow:hover {
-    border-color: var(--sky);
-    background: var(--sky-soft);
-}
-
-.dialog-counter {
-    color: var(--muted);
-    font-size: 0.85rem;
-    font-weight: 700;
-}
-
-/* Bottom navigation is a distinct light-blue strip inside the card dialog. */
-.dialog-nav {
-    border-top-color: var(--sky-deep);
-    background: var(--sky);
-    color: var(--text);
-}
-
-.dialog-nav .dialog-arrow,
-.dialog-nav .dialog-close {
-    border-color: rgb(23 48 79 / 0.35);
-    background: rgb(255 255 255 / 0.45);
-    color: var(--text);
-}
-
-.dialog-nav .dialog-arrow:hover,
-.dialog-nav .dialog-arrow:focus-visible,
-.dialog-nav .dialog-close:hover,
-.dialog-nav .dialog-close:focus-visible {
-    border-color: var(--text);
-    background: rgb(255 255 255 / 0.8);
-}
-
-.dialog-nav .dialog-counter {
-    color: var(--text);
-}
-
 /* ---------- Audio page: square covers with a preview button ---------- */
 
 .audio-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, 12rem);
-    justify-content: start;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 1.25rem 1rem;
     margin: 0;
     padding: 0;
@@ -1878,29 +2194,13 @@ img[data-media-open]:focus-visible,
     font-size: var(--step--1);
 }
 
-.play-all {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    margin: 0 0 0.75rem;
-    padding: 0.35rem 0.8rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.play-all:hover {
-    background: var(--sky-soft);
-}
-
 @media (max-width: 30rem) {
     .audio-grid {
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+        gap: 0.6rem;
+    }
+
+    .audio-grid > * {
+        flex-basis: calc((100% - 0.6rem) / 2);
     }
 }
 
@@ -1999,7 +2299,6 @@ img[data-media-open]:focus-visible,
 /* ---------- Small screens ---------- */
 
 @media (max-width: 52rem) {
-    .intro,
     .split.about,
     [data-featured] {
         grid-template-columns: 1fr;
@@ -2009,22 +2308,9 @@ img[data-media-open]:focus-visible,
         grid-row: auto;
     }
 
-    .intro {
-        gap: 1.5rem;
-    }
-
     .split.about img {
         max-width: 20rem;
         justify-self: center;
-    }
-
-    .gallery,
-    .gallery.compact {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .portrait {
-        max-width: 11rem;
     }
 
     .bar {
@@ -2051,6 +2337,34 @@ img[data-media-open]:focus-visible,
         margin-left: 0;
     }
 
+}
+
+/* Once the hero stacks, centre the portrait and the greeting as one block. */
+@media (max-width: 44rem) {
+    .intro {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 1.35rem;
+        text-align: center;
+    }
+
+    .intro > div {
+        width: 100%;
+        max-width: 34rem;
+    }
+
+    .intro .lead {
+        margin-inline: auto;
+    }
+
+    .intro .actions,
+    .intro .social {
+        justify-content: center;
+    }
+
+    .portrait {
+        max-width: 9rem;
+    }
 }
 
 @media (max-width: 36.5rem) {
@@ -2114,24 +2428,52 @@ img[data-media-open]:focus-visible,
         padding: 0.25rem 0;
         font-size: 1rem;
     }
+
+    /* Compact menus: both pills stay side by side at the narrowest width. */
+    .filter-bar,
+    .filter-controls {
+        gap: 0.2rem;
+    }
+
+    .filter-bar .filter-external {
+        padding: 0.2em;
+    }
+
+    .filter-menu > summary {
+        gap: 0.2rem;
+        padding: 0.32em 0.5em;
+        font-size: 0.78rem;
+    }
+
+    .filter-menu > summary::after {
+        font-size: 0.65rem;
+    }
+
+    .filter-menu .menu-label {
+        display: none;
+    }
+
+    .filter-menu .menu-label-short {
+        display: inline;
+    }
+
+    .filter-menu .filters button {
+        padding: 0.3em 0.6em;
+        font-size: 0.78rem;
+    }
+
+    .filter-menu .count {
+        display: none;
+    }
 }
 
 @media (max-width: 30rem) {
-    .gallery,
-    .gallery.compact {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
+    .gallery {
+        gap: 0.6rem;
     }
 
-    *,
-    *::before,
-    *::after {
-        transition: none !important;
+    .gallery > * {
+        flex-basis: calc((100% - 0.6rem) / 2);
     }
 }
 
@@ -2148,27 +2490,53 @@ img[data-media-open]:focus-visible,
     image-rendering: pixelated;
 }
 
-/* Groups: a compact title + intro line, then a full-width grid. */
-.group {
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--line);
-}
-
+/* Groups: spacing alone separates zones; no full-width divider line. */
 .group + .group {
-    margin-top: 1.25rem;
+    margin-top: 2.5rem;
 }
 
+/* Three tracks keep the badge at the title's left without shifting the title off-centre. */
 .group-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.15rem 0.75rem;
-    margin: 0 0 0.75rem;
+    --ink: var(--link);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0 0.6rem;
+    margin: 0 0 1rem;
+    text-align: center;
+}
+
+.group-head::after {
+    content: "";
+    grid-column: 3;
+}
+
+.group-badge {
+    grid-column: 1;
+    justify-self: end;
+    /* Align to the text line, not to the h2 box that also contains the underline. */
+    align-self: start;
+    margin-top: 0.1rem;
 }
 
 .group-head h2 {
-    margin: 0;
-    font-size: var(--step-1);
+    grid-column: 2;
+    min-width: 0;
+}
+
+.group-head.accent-teal { --ink: var(--accent-teal-ink); }
+.group-head.accent-indigo { --ink: var(--accent-indigo-ink); }
+.group-head.accent-steel { --ink: var(--accent-steel-ink); }
+
+.group-badge {
+    display: inline-flex;
+    align-items: center;
+    color: var(--ink);
+}
+
+.group-badge .icon {
+    width: 1.1rem;
+    height: 1.1rem;
 }
 
 .group .group-intro {
@@ -2179,149 +2547,100 @@ img[data-media-open]:focus-visible,
     font-size: 0.92rem;
 }
 
-/* With a specific filter active, the selected tab already names the group. */
+/* A filtered group keeps its badge so the category is always identifiable. */
 .group.filtered > .group-head {
-    display: none;
+    margin-bottom: 0.75rem;
 }
 
 .group .cards,
 .group .games {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
-    justify-content: stretch;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 1rem;
 }
 
-.group .games {
-    display: grid;
-    align-items: start;
-}
-
-/* Groups with only one or two items become full-width rows, not a lone card. */
-.group.sparse > .cards,
-.group.sparse > .games,
-.group.sparse > .audio-grid {
-    grid-template-columns: 1fr;
-    justify-content: stretch;
-    gap: 0.6rem;
-}
-
-.group.sparse .game {
-    flex-direction: row;
-}
-
-.group.sparse .game .media {
-    flex: 0 0 10rem;
-    width: 10rem;
-    aspect-ratio: auto;
-    align-self: stretch;
-}
-
-.group.sparse .game-body {
-    padding: 0.6rem 0.9rem;
-}
-
-.group.sparse .game .summary {
-    -webkit-line-clamp: 1;
-}
-
-/* Clamped text uses -webkit-box, which shrink-wraps: give it room, but keep lines readable. */
-.group.sparse .game .role,
-.group.sparse .game .summary,
-.group.sparse .card .summary {
-    width: 100%;
-    max-width: 46rem;
-}
-
-.group.sparse .card {
-    display: grid;
-    grid-template-columns: 9rem minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto auto;
-    column-gap: 1rem;
-    max-width: none;
-    padding: 0.5rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background: var(--surface);
-}
-
-.group.sparse .card .media {
-    grid-column: 1;
-    grid-row: 1 / 6;
-    aspect-ratio: auto;
-    align-self: stretch;
-    height: 100%;
-    margin: 0;
-}
-
-/* Sparse rows are taller than 16:9, so keep the full image and blur-fill the letterbox. */
-.group.sparse .game .media [data-media-slide],
-.group.sparse .card .media [data-media-slide] {
-    object-fit: contain;
-}
-
-.group.sparse .game .media-backdrop,
-.group.sparse .card .media-backdrop {
-    display: block;
-}
-
-.group.sparse .card h3 {
-    grid-column: 2;
-    grid-row: 1;
-    margin: 0;
-}
-
-.group.sparse .card .meta {
-    grid-column: 2;
-    grid-row: 2;
-}
-
-.group.sparse .card .summary {
-    grid-column: 2;
-    grid-row: 3;
-    margin: 0;
-    -webkit-line-clamp: 2;
-}
-
-.group.sparse .card .tags {
-    grid-column: 2;
-    grid-row: 4;
-    margin: 0;
-}
-
-.group.sparse .card .actions {
-    grid-column: 2;
-    grid-row: 5;
-    margin-top: 0.4rem;
-}
-
-.group.sparse .audio-card {
-    display: grid;
-    grid-template-columns: 4.5rem minmax(0, 1fr);
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.4rem 0;
-}
-
-.group.sparse .audio-art {
-    width: 4.5rem;
-    border-radius: 8px;
-}
-
-.group.sparse .audio-play {
-    right: 0.25rem;
-    bottom: 0.25rem;
-    width: 1.75rem;
-    height: 1.75rem;
-}
-
-.group.sparse .audio-open {
-    padding: 0;
-}
-
 @media (max-width: 30rem) {
+    .filter-menu[open] .filters {
+        width: min(90vw, 18rem);
+        min-width: 0;
+    }
+
+    .filter-bar {
+        padding: 0.4rem 0.35rem;
+    }
+
+    .filter-bar .filter-controls {
+        gap: 0.35rem;
+    }
+
+    /* Keep the icon beside the title while both side tracks stay equal. */
+    .group-head {
+        grid-template-columns: minmax(1.4rem, 1fr) auto minmax(1.4rem, 1fr);
+        gap: 0 0.35rem;
+    }
+
+    .group-badge .icon {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    /* Two small cards still fit at the narrowest window, all the same size. */
     [data-featured],
-    .group .cards,
-    .group .games {
-        grid-template-columns: 1fr;
+    .group > .cards,
+    .group > .games {
+        gap: 0.6rem;
+    }
+
+    [data-featured] > *,
+    .group > .cards > *,
+    .group > .games > * {
+        flex-basis: calc((100% - 0.6rem) / 2);
+    }
+
+    .group .card h3 {
+        font-size: 0.92rem;
+        line-height: 1.2;
+    }
+
+    .group .card .context {
+        margin-bottom: 0.5rem;
+        font-size: 0.72rem;
+    }
+
+    .card-links {
+        gap: 0.25rem;
+    }
+
+    .icon-link {
+        width: 1.3rem;
+        height: 1.3rem;
+    }
+
+    .card-details {
+        height: 1.3rem;
+        padding-inline: 0.45rem;
+    }
+
+    .icon-link .icon {
+        width: 0.7rem;
+        height: 0.7rem;
+    }
+
+    .group .card .actions {
+        gap: 0.3rem;
+    }
+
+    .group .card .actions .button {
+        width: 100%;
+        justify-content: center;
+        padding: 0.3em 0.45em;
+        font-size: 0.72rem;
+    }
+
+    .group .card .context,
+    .group .game .context {
+        font-size: 0.75rem;
     }
 }
+

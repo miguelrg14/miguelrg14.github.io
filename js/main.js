@@ -3,7 +3,6 @@
 // and opens the Art lightbox and the project details dialog.
 
 const root = document.documentElement.dataset.root || "";
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // Compact header: a menu button replaces the inline nav on very small screens.
 const siteHeader = document.querySelector(".site-header");
@@ -50,6 +49,7 @@ const esc = (text) =>
     String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 const asset = (path) => (/^https?:/.test(path) ? path : root + path);
+const thumbOf = (path) => (window.THUMBS && window.THUMBS[path.replace(/^\.\.\//, "")]) || null;
 
 const tagLabels = {
     "c#": "C#", "c++": "C++", ".net": ".NET", "ai": "AI", "ui": "UI",
@@ -57,23 +57,78 @@ const tagLabels = {
 };
 const tagLabel = (tag) => tagLabels[tag] || tag.replace(/\b\w/g, (c) => c.toUpperCase());
 
-function keepTagPanelInView(tagFilters) {
-    const panel = tagFilters?.querySelector(".filters");
+function keepFilterPanelInView(menu) {
+    const panel = menu?.querySelector(".filters");
     if (!panel) return;
     const shift = () => {
         panel.style.transform = "";
-        if (!tagFilters.open) return;
+        if (!menu.open) return;
         const box = panel.getBoundingClientRect();
         const delta = box.left < 8 ? 8 - box.left : box.right > innerWidth - 8 ? innerWidth - 8 - box.right : 0;
         if (delta) panel.style.transform = `translateX(${delta}px)`;
     };
-    tagFilters.addEventListener("toggle", () => requestAnimationFrame(shift));
+    menu.addEventListener("toggle", () => requestAnimationFrame(shift));
     window.addEventListener("resize", shift);
 }
 
-function mediaItems(p) {
+// Opening one menu closes the other so both panels never overlap.
+function linkFilterMenus() {
+    const menus = [...document.querySelectorAll(".filter-bar .filter-menu")];
+    menus.forEach((menu) => {
+        menu.addEventListener("toggle", () => {
+            if (!menu.open) return;
+            menus.forEach((other) => { if (other !== menu) other.open = false; });
+        });
+    });
+}
+
+// The count span is not part of the visible menu label.
+const buttonLabel = (button) => button.firstChild?.textContent.trim() || button.textContent.trim();
+
+linkFilterMenus();
+
+// A small icon gives each category its own identity without adding numbers.
+const groupIcons = {
+    game: `<path d="M7 8h10a4 4 0 0 1 4 4v1a3 3 0 0 1-5.2 2l-1-1H9.2l-1 1A3 3 0 0 1 3 13v-1a4 4 0 0 1 4-4Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M7 11.5v3M5.5 13h3M16 12h.01M18 13.5h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
+    art: `<path d="m4 20 4-1 10-10-3-3L5 16l-1 4Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="m14 6 4 4" fill="none" stroke="currentColor" stroke-width="1.9"/>`,
+    cube: `<path d="m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 0v10m0 0 9-5m-9 5-9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>`,
+    ai: `<circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>`,
+    web: `<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.8"/>`,
+    music: `<path d="M9 18V5l10-2v13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="16" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/>`,
+    code: `<path d="m9 6-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`
+};
+
+const groupIconFor = (id) => {
+    if (/^(games|solo|team)$/.test(id)) return "game";
+    if (id === "game" || /^(albums|studio)$/.test(id)) return "music";
+    if (/^(digital|pixel|art)$/.test(id)) return "art";
+    if (id === "3d" || /engine|graphic/i.test(id)) return "cube";
+    if (/ai/i.test(id)) return "ai";
+    if (id === "web") return "web";
+    return "code";
+};
+
+function decorateGroupHeads() {
+    const accents = ["", "accent-teal", "accent-indigo", "accent-steel"];
+    const groups = [...document.querySelectorAll(".group[data-group]")];
+    groups.forEach((group, index) => {
+        const head = group.querySelector(".group-head");
+        const title = head?.querySelector("h2");
+        if (!head || !title || head.querySelector(".group-badge")) return;
+        const accent = accents[index % accents.length];
+        if (accent) head.classList.add(accent);
+        const badge = document.createElement("span");
+        badge.className = "group-badge";
+        badge.setAttribute("aria-hidden", "true");
+        badge.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${groupIcons[groupIconFor(group.dataset.group)]}</svg>`;
+        head.prepend(badge);
+    });
+}
+
+function mediaItems(p, dialog = false) {
     const items = [];
-    if (p.image) items.push({ kind: "image", src: asset(p.image), alt: p.alt || p.title });
+    const cover = dialog ? p.image : thumbOf(p.image || "") || p.image;
+    if (p.image) items.push({ kind: "image", src: asset(cover), alt: p.alt || p.title });
     const video = p.video || p.coverVideo;
     if (video) items.push({ kind: "video", src: asset(video), alt: `Video preview of ${p.title}` });
     if (p.extra) items.push({ kind: "image", src: asset(p.extra), alt: `Another view of ${p.title}` });
@@ -86,8 +141,8 @@ function mediaItems(p) {
     return items;
 }
 
-function media(p, dialog = false, index = 0) {
-    const items = mediaItems(p);
+function media(p, dialog = false, index = 0, withActions = false) {
+    const items = mediaItems(p, dialog);
     if (!items.length) return "";
     const slides = items.map((item, i) => {
         const hidden = i === index ? "" : " hidden";
@@ -95,7 +150,7 @@ function media(p, dialog = false, index = 0) {
             return `<video data-media-slide${hidden} data-src="${esc(item.src)}" muted loop playsinline${dialog ? " controls" : ""} preload="none" aria-label="${esc(item.alt)}"></video>`;
         }
         const zoomable = dialog && item.kind === "image";
-        return `<img data-media-slide${hidden}${zoomable ? ` data-media-open role="button" tabindex="-1" aria-label="Enlarge image: ${esc(item.alt || p.title)}"` : ""} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" width="1200" height="750">`;
+        return `<img data-media-slide${hidden}${zoomable ? ` data-media-open role="button" tabindex="-1" aria-label="Enlarge image: ${esc(item.alt || p.title)}"` : ""} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" decoding="async" width="1200" height="750">`;
     }).join("");
     const controls = `${items.length < 2 ? "" : `
         <button type="button" class="media-arrow media-prev" data-media-step="-1" aria-label="Previous media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
@@ -103,7 +158,7 @@ function media(p, dialog = false, index = 0) {
         <span class="media-count" aria-live="polite">${index + 1} / ${items.length}</span>`}`;
     return `<div class="media${dialog ? " dialog-media" : ""}${p.contain ? " contain" : ""}" data-media-carousel data-media-index="${index}" style="--cover: url('${esc(items[0].src)}')">
         <span class="media-backdrop" style="background-image: url('${esc(items[0].src)}')" aria-hidden="true"></span>
-        ${slides}${controls}
+        ${slides}${controls}${!dialog && withActions ? `<button type="button" class="media-open" data-open-project="${esc(p.id)}" aria-label="Details of ${esc(p.title)}"></button>` : ""}
     </div>`;
 }
 
@@ -116,46 +171,62 @@ function tags(p) {
     return `<ul class="tags" aria-label="Technologies">${p.tags.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
 }
 
-function actions(p, size, withDetails = false) {
-    const items = p.links.map((link, i) => {
-        const icon = link.kind === "play" ? `<svg class="icon" aria-hidden="true"><use href="#play"></use></svg>` : "";
-        const style = i === 0 ? "button" : "button ghost";
-        return `<li><a class="${style} ${size}" href="${esc(link.url)}">${icon}${esc(link.label)}<span class="visually-hidden"> (${esc(p.title)})</span></a></li>`;
+const linkIcons = { play: "play", itch: "itch", video: "youtube", source: "github", download: "download" };
+const linkOrder = { play: 0, itch: 1, source: 2, video: 3, download: 4 };
+const orderedLinks = (p) => [...(p.links || [])].sort((a, b) => (linkOrder[a.kind] ?? 9) - (linkOrder[b.kind] ?? 9));
+
+// Cards show at most three technologies; the full list lives in the dialog.
+function cardTags(p) {
+    const tags = p.tags || [];
+    if (!tags.length) return "";
+    const chips = tags.slice(0, 3).map((t) => `<li>${esc(t)}</li>`);
+    if (tags.length > 3) chips.push(`<li class="tag-more">+${tags.length - 3}</li>`);
+    return `<ul class="tags card-tags" aria-label="Technologies">${chips.join("")}</ul>`;
+}
+
+function cardLinks(p) {
+    const details = `<li><button type="button" class="button ghost small card-details" data-open-project="${esc(p.id)}" aria-label="Details of ${esc(p.title)}">Details<svg class="icon" aria-hidden="true"><use href="#arrow"></use></svg></button></li>`;
+    const links = (p.links || []).length
+        ? orderedLinks(p).map((link) => `<li><a class="icon-link" href="${esc(link.url)}" title="${esc(link.label)}" aria-label="${esc(link.label + " (" + p.title + ")")}"><svg class="icon" aria-hidden="true"><use href="#${linkIcons[link.kind] || "arrow"}"></use></svg></a></li>`).join("")
+        : "";
+    return `<ul class="actions card-links" aria-label="More on ${esc(p.title)}">${details}${links}</ul>`;
+}
+
+const shortLinkLabels = { play: "Play", itch: "itch.io", source: "GitHub", video: "Trailer", download: "Download" };
+
+function actions(p) {
+    const items = orderedLinks(p).map((link) => {
+        const icon = `<svg class="icon" aria-hidden="true"><use href="#${linkIcons[link.kind] || "arrow"}"></use></svg>`;
+        const label = shortLinkLabels[link.kind] || link.label;
+        return `<li><a class="button ghost" href="${esc(link.url)}" title="${esc(link.label)}" aria-label="${esc(link.label)} (${esc(p.title)})">${icon}${esc(label)}</a></li>`;
     });
-    if (withDetails) {
-        items.push(`<li><button type="button" class="button ghost ${size}" data-open-project="${esc(p.id)}">Details<span class="visually-hidden"> of ${esc(p.title)}</span></button></li>`);
-    }
     return `<ul class="actions">${items.join("")}</ul>`;
 }
 
 function card(p) {
     const search = p.tags.map((t) => t.toLowerCase());
     return `<li class="card" data-project="${esc(p.id)}" data-tags="${esc(JSON.stringify(search))}">
-        ${media(p)}
+        ${media(p, false, 0, true)}
         <h3>${esc(p.title)}</h3>
-        <p class="meta">${meta(p)}</p>
-        <p class="summary">${esc(p.summary)}</p>
-        ${tags(p)}
-        ${actions(p, "small", true)}
+        ${cardTags(p)}
+        ${cardLinks(p)}
     </li>`;
 }
 
 function gameRow(p) {
     const search = p.tags.map((t) => t.toLowerCase());
     return `<article class="game" id="${esc(p.id)}" data-project="${esc(p.id)}" data-item data-tags="${esc(JSON.stringify(search))}">
-        ${media(p)}
+        ${media(p, false, 0, true)}
         <div class="game-body">
             <h2>${esc(p.title)}</h2>
-            <p class="meta">${meta(p)}</p>
-            <p class="role">${esc(p.role)}</p>
-            <p class="summary">${esc(p.summary)}</p>
-            ${tags(p)}
-            ${actions(p, "small", true)}
+            ${cardTags(p)}
+            ${cardLinks(p)}
         </div>
     </article>`;
 }
 
 function audioCard(a) {
+    const cover = thumbOf(a.cover) || a.cover;
     const video = a.coverVideo
         ? `<video muted loop playsinline preload="none" aria-hidden="true" data-src="${esc(asset(a.coverVideo))}"></video>`
         : "";
@@ -163,9 +234,9 @@ function audioCard(a) {
         ? `<button type="button" class="audio-play" data-audio-preview="${esc(asset(a.preview))}" aria-label="Play preview of ${esc(a.title)}" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#play"></use></svg></button>`
         : "";
     return `<li class="audio-card" data-item>
-        <div class="audio-art audio-cover" data-open-audio="${esc(a.id)}" style="--cover: url('${esc(asset(a.cover))}')">
+        <div class="audio-art audio-cover" data-open-audio="${esc(a.id)}" style="--cover: url('${esc(asset(cover))}')">
             <span class="audio-backdrop" aria-hidden="true"></span>
-            <img src="${esc(asset(a.cover))}" alt="" loading="lazy" width="600" height="600">${video}
+            <img src="${esc(asset(cover))}" alt="" loading="lazy" decoding="async" width="600" height="600">${video}
             ${play}
         </div>
         <button type="button" class="audio-open" data-project="${esc(a.id)}" aria-label="Details of ${esc(a.title)}">
@@ -175,9 +246,86 @@ function audioCard(a) {
     </li>`;
 }
 
-// Home: featured projects.
+// Home: one card per zone, illustrated with the first matching item in the data.
+// The artwork opens that item's details; the bottom link opens the zone filtered.
+function zoneCard(p, zone) {
+    const icon = groupIcons[zone.icon] || "";
+    return `<li class="zone-item">
+        <p class="zone-label zone-${esc(zone.icon)}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span>${esc(zone.label)}</span></p>
+        <article class="card zone-card" data-project="${esc(p.id)}">
+            ${media(p, false, 0, true)}
+            <h3>${esc(p.title)}</h3>
+            ${cardTags(p)}
+            <a class="button ghost small zone-link" href="${esc(zone.href)}">${esc(zone.cta)}<svg class="icon" aria-hidden="true"><use href="#arrow"></use></svg></a>
+        </article>
+    </li>`;
+}
+
+// The Art zone has no data file, so give it a project entry like the other zones.
+// That lets its card join the same detail dialog and pager instead of using the lightbox.
+const homeArtProject = {
+    id: "home-art",
+    title: "Illustration",
+    meta: "Digital art",
+    summary: "Character illustration drawn from scratch in Illustrator, exploring colour and shape.",
+    tags: ["Illustrator", "Character design"],
+    image: "assets/art/cowboy-digital.webp",
+    alt: "Digital illustration of a green-skinned cowboy firing a revolver at sunset",
+    contain: true,
+    links: [{ kind: "view", label: "See all art", url: root + "art/index.html" }]
+};
+
 document.querySelectorAll("[data-featured]").forEach((list) => {
-    list.innerHTML = window.PROJECTS.filter((p) => p.featured).map(card).join("");
+    const projects = window.PROJECTS || [];
+    const games = projects.find((p) => p.kind === "game");
+    const engine = projects.find((p) => p.kind === "code" && /engine/i.test(p.title) && (p.groups || [p.group]).includes("engines"));
+    const audio = (window.AUDIO_ITEMS || [])[0];
+    const cards = [];
+    if (games) {
+        cards.push(zoneCard(games, {
+            label: "Games",
+            icon: "game",
+            href: root + "games/index.html",
+            cta: "View all games"
+        }));
+    }
+    if (engine) {
+        cards.push(zoneCard(engine, {
+            label: "Code",
+            icon: "code",
+            context: "Engines, graphics and AI projects.",
+            href: root + "code/index.html",
+            cta: "View Code"
+        }));
+    }
+    cards.push(zoneCard(homeArtProject, {
+        label: "Art",
+        icon: "art",
+        context: "Digital art, pixel art and 3D models.",
+        href: root + "art/index.html",
+        cta: "View Art"
+    }));
+    if (audio) {
+        cards.push(zoneCard({
+            id: audio.id,
+            title: audio.title,
+            meta: audio.meta,
+            summary: audio.summary,
+            tags: audio.tags || [],
+            image: audio.cover,
+            coverVideo: audio.coverVideo,
+            preview: audio.preview,
+            tracks: audio.tracks || [],
+            extra: audio.extra
+        }, {
+            label: "Audio",
+            icon: "music",
+            context: "Music, game audio and studio work.",
+            href: root + "music/index.html",
+            cta: "View Audio"
+        }));
+    }
+    list.innerHTML = cards.join("");
 });
 
 // Games page: grouped by solo/team work, using the Code page's section layout.
@@ -190,7 +338,7 @@ document.querySelectorAll("[data-games]").forEach((box) => {
     box.innerHTML = groups.map((g) => {
         const items = games.filter(g.test);
         if (!items.length) return "";
-        return `<section class="group${items.length <= 2 ? " sparse" : ""}" data-group="${g.id}" aria-labelledby="games-${g.id}">
+        return `<section class="group" data-group="${g.id}" aria-labelledby="games-${g.id}">
             <div class="group-head">
                 <h2 id="games-${g.id}">${g.title}</h2>
                 <p class="group-intro">${g.intro}</p>
@@ -207,16 +355,11 @@ if (audioBox) {
     audioBox.innerHTML = (window.AUDIO_GROUPS || []).map((g) => {
         const inGroup = items.filter((a) => a.group === g.id);
         if (!inGroup.length) return "";
-        const trackCount = inGroup.reduce((sum, a) => sum + (a.tracks?.length || 0), 0);
-        const playAll = trackCount > 1
-            ? `<button type="button" class="play-all" data-open-audio="playlist-${esc(g.id)}"><svg class="icon" aria-hidden="true"><use href="#play"></use></svg>Play all ${trackCount} tracks</button>`
-            : "";
-        return `<section class="group${inGroup.length <= 2 ? " sparse" : ""}" data-group="${esc(g.id)}" aria-labelledby="audio-${esc(g.id)}">
+        return `<section class="group" data-group="${esc(g.id)}" aria-labelledby="audio-${esc(g.id)}">
             <div class="group-head">
                 <h2 id="audio-${esc(g.id)}">${esc(g.title)}</h2>
                 <p class="group-intro">${esc(g.intro)}</p>
             </div>
-            ${playAll}
             <ul class="audio-grid">${inGroup.map(audioCard).join("")}</ul>
         </section>`;
     }).join("");
@@ -261,7 +404,7 @@ if (codeBox) {
     codeBox.innerHTML = orderedGroups.map((g) => {
         const items = projectsIn(g);
         if (!items.length) return "";
-        return `<section class="group${items.length <= 2 ? " sparse" : ""}" data-group="${esc(g.id)}" aria-labelledby="group-${g.id}">
+        return `<section class="group" data-group="${esc(g.id)}" aria-labelledby="group-${g.id}">
             <div class="group-head">
                 <h2 id="group-${g.id}">${esc(g.title)}</h2>
                 <p class="group-intro">${esc(g.intro)}</p>
@@ -271,10 +414,14 @@ if (codeBox) {
     }).join("") + `<p class="empty" hidden>Nothing with that combination yet.</p>`;
 
     const tabs = document.querySelector("[data-group-tabs]");
+    const categoryMenu = document.querySelector(".filter-bar .group-filters");
     if (tabs) {
         const options = [{ id: "all", title: "All", count: orderedGroups.reduce((sum, g) => sum + projectsIn(g).length, 0) },
             ...orderedGroups.map((g) => ({ id: g.id, title: g.title, count: projectsIn(g).length }))];
-        tabs.innerHTML = options.map((g) => `<button type="button" data-group="${esc(g.id)}" aria-pressed="${g.id === "all"}">${esc(g.title)} <span class="count">${g.count}</span></button>`).join("");
+        const legend = esc(tabs.dataset.legend || "Show one category");
+        tabs.innerHTML = `<legend class="visually-hidden">${legend}</legend>` +
+            options.map((g) => `<button type="button" data-group="${esc(g.id)}" aria-pressed="${g.id === "all"}">${esc(g.title)} <span class="count">${g.count}</span></button>`).join("");
+        keepFilterPanelInView(categoryMenu);
     }
 
     let activeGroup = "all";
@@ -297,18 +444,19 @@ if (codeBox) {
         });
         codeBox.querySelector(".empty").hidden = shown > 0;
     };
-
+    const categoryStatus = document.querySelector("[data-category-status]");
     tabs?.addEventListener("click", (event) => {
         const button = event.target.closest("button[data-group]");
         if (!button) return;
         activeGroup = button.dataset.group;
         tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+        if (categoryStatus) categoryStatus.textContent = buttonLabel(button);
         applyFilters();
     });
 
     const filterStatus = document.querySelector("[data-filter-status]");
     const tagFilters = document.querySelector(".filter-bar .tag-filters");
-    keepTagPanelInView(tagFilters);
+    keepFilterPanelInView(tagFilters);
 
     document.querySelectorAll(".filter-bar .filters").forEach((filters) => {
         filters.addEventListener("click", (event) => {
@@ -339,7 +487,10 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
             count: count(group)
         }))
     ];
-    tabs.innerHTML = options.map((option) => `<button type="button" data-group="${esc(option.id)}" aria-pressed="${option.id === "all"}">${esc(option.title)} <span class="count">${option.count}</span></button>`).join("");
+    const legend = esc(tabs.dataset.legend || "Show one category");
+    tabs.innerHTML = `<legend class="visually-hidden">${legend}</legend>` +
+        options.map((option) => `<button type="button" data-group="${esc(option.id)}" aria-pressed="${option.id === "all"}">${esc(option.title)} <span class="count">${option.count}</span></button>`).join("");
+    keepFilterPanelInView(document.querySelector(".filter-bar .group-filters"));
 
     const tagsOf = (item) => {
         try { return JSON.parse(item.dataset.tags || "[]"); } catch { return []; }
@@ -352,7 +503,7 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
             .sort((a, b) => tagLabel(a).localeCompare(tagLabel(b)));
         filters.innerHTML = `<legend class="visually-hidden">Show items with (within the selected category)</legend>` +
             ["all", ...used].map((tag) => `<button type="button" data-tag="${esc(tag)}" aria-pressed="${tag === "all"}">${esc(tag === "all" ? "All" : tagLabel(tag))}</button>`).join("");
-        keepTagPanelInView(tagFilters);
+        keepFilterPanelInView(tagFilters);
     }
 
     let activeGroup = "all";
@@ -375,12 +526,13 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
         });
         box.querySelector(".empty")?.toggleAttribute("hidden", shown > 0);
     };
-
+    const categoryStatus = document.querySelector("[data-category-status]");
     tabs.addEventListener("click", (event) => {
         const button = event.target.closest("button[data-group]");
         if (!button) return;
         activeGroup = button.dataset.group;
         tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+        if (categoryStatus) categoryStatus.textContent = buttonLabel(button);
         applyFilters();
     });
 
@@ -396,6 +548,8 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
     applyFilters();
 });
 
+decorateGroupHeads();
+
 // Media carousels: image, video and any extra view can be browsed on each card.
 function setMedia(box, index, manual = false) {
     const slides = [...box.querySelectorAll("[data-media-slide]")];
@@ -404,7 +558,7 @@ function setMedia(box, index, manual = false) {
     const current = slides.find((slide) => !slide.hidden);
     if (current && current !== slides[next] && current.tagName === "VIDEO") {
         current.pause();
-        current.currentTime = 0;
+        if (current.readyState > 0) current.currentTime = 0;
     }
     slides.forEach((slide, i) => {
         slide.hidden = i !== next;
@@ -413,11 +567,10 @@ function setMedia(box, index, manual = false) {
     box.dataset.mediaIndex = String(next);
     if (manual) box.dataset.mediaManual = "true";
     const active = slides[next];
-    const isDialog = box.classList.contains("dialog-media");
-    const navSlides = isDialog ? slides : slides.filter((slide) => slide.tagName === "IMG");
+    const navSlides = slides;
     const count = box.querySelector(".media-count");
     if (count) {
-        count.hidden = !isDialog && active.tagName === "VIDEO";
+        count.hidden = false;
         const pos = navSlides.indexOf(active);
         count.textContent = `${Math.max(pos, 0) + 1} / ${navSlides.length}`;
     }
@@ -447,14 +600,11 @@ document.addEventListener("click", (event) => {
         setMedia(box, current + step, true);
         return;
     }
-    // Arrows on cards browse that card's stills; video previews stay on hover.
-    const images = slides.filter((slide) => slide.tagName === "IMG");
-    if (!images.length) return;
-    const pos = images.indexOf(slides[current]);
-    const next = pos < 0
-        ? (step > 0 ? images[0] : images[images.length - 1])
-        : images[(pos + step + images.length) % images.length];
-    setMedia(box, slides.indexOf(next), true);
+    // Every slide, including the looping video/gif preview, stays in the carousel.
+    const nextIndex = (current + step + slides.length) % slides.length;
+    // Remember the chosen still so leaving the card stops the loop on an image.
+    if (slides[nextIndex].tagName === "IMG") box.dataset.mediaRest = String(nextIndex);
+    setMedia(box, nextIndex);
 });
 
 // Full-size image viewer opened from a card or from the project dialog.
@@ -567,49 +717,47 @@ imageDialog.addEventListener("close", () => {
 });
 
 // Short muted previews: show the video slide while a card is hovered or focused.
-if (!reduceMotion) {
-    document.querySelectorAll(".card, .game").forEach((el) => {
-        const box = el.querySelector("[data-media-carousel]");
-        if (!box) return;
-        const slides = [...box.querySelectorAll("[data-media-slide]")];
-        const videoIndex = slides.findIndex((slide) => slide.tagName === "VIDEO");
-        if (videoIndex < 0) return;
-        const preview = () => {
-            if (box.dataset.mediaManual !== "true") setMedia(box, videoIndex);
-        };
-        const cover = () => {
-            if (box.dataset.mediaManual !== "true") setMedia(box, 0);
-        };
-        el.addEventListener("pointerenter", preview);
-        el.addEventListener("pointerleave", cover);
-        el.addEventListener("focusin", preview);
-        el.addEventListener("focusout", (e) => {
-            if (!el.contains(e.relatedTarget)) cover();
-        });
+document.querySelectorAll(".card, .game").forEach((el) => {
+    const box = el.querySelector("[data-media-carousel]");
+    if (!box) return;
+    const slides = [...box.querySelectorAll("[data-media-slide]")];
+    const videoIndex = slides.findIndex((slide) => slide.tagName === "VIDEO");
+    if (videoIndex < 0) return;
+    // Hover always brings the video back, even after using the image arrows.
+    const preview = () => setMedia(box, videoIndex);
+    const cover = () => setMedia(box, Number(box.dataset.mediaRest || 0));
+    el.addEventListener("pointerenter", preview);
+    el.addEventListener("pointerleave", cover);
+    // Clicking a carousel arrow focuses it; that must not pull focus back to the video.
+    el.addEventListener("focusin", (event) => {
+        if (!event.target.closest(".media-arrow")) preview();
     });
-    document.querySelectorAll(".audio-card").forEach((el) => {
-        const box = el.querySelector(".audio-cover");
-        const video = box && box.querySelector("video");
-        if (!video) return;
-        const start = () => {
-            if (!video.src) video.src = video.dataset.src;
-            video.play().then(() => box.classList.add("playing")).catch(() => {});
-        };
-        const stop = () => {
-            box.classList.remove("playing");
-            video.pause();
-        };
-        el.addEventListener("pointerenter", start);
-        el.addEventListener("pointerleave", stop);
-        el.addEventListener("focusin", start);
-        el.addEventListener("focusout", (e) => {
-            if (!el.contains(e.relatedTarget)) stop();
-        });
+    el.addEventListener("focusout", (e) => {
+        if (!el.contains(e.relatedTarget)) cover();
     });
-}
+});
+document.querySelectorAll(".audio-card").forEach((el) => {
+    const box = el.querySelector(".audio-cover");
+    const video = box && box.querySelector("video");
+    if (!video) return;
+    const start = () => {
+        if (!video.src) video.src = video.dataset.src;
+        video.play().then(() => box.classList.add("playing")).catch(() => {});
+    };
+    const stop = () => {
+        box.classList.remove("playing");
+        video.pause();
+    };
+    el.addEventListener("pointerenter", start);
+    el.addEventListener("pointerleave", stop);
+    el.addEventListener("focusin", start);
+    el.addEventListener("focusout", (e) => {
+        if (!el.contains(e.relatedTarget)) stop();
+    });
+});
 
 // Project details: click a card (or its Details button) to see the full project.
-const projectsById = new Map((window.PROJECTS || []).map((p) => [p.id, p]));
+const projectsById = new Map([...(window.PROJECTS || []), homeArtProject].map((p) => [p.id, p]));
 (window.AUDIO_ITEMS || []).forEach((a) => {
     projectsById.set(a.id, {
         id: a.id,
@@ -623,36 +771,87 @@ const projectsById = new Map((window.PROJECTS || []).map((p) => [p.id, p]));
         preview: a.preview,
         tracks: a.tracks || [],
         extra: a.extra,
-        links: a.link ? [{ kind: "play", label: "See it on Games", url: root + a.link }] : []
+        links: a.link ? [{ kind: "view", label: "See it on Games", url: root + a.link }] : []
     });
 });
-(window.AUDIO_GROUPS || []).forEach((g) => {
-    const tracks = (window.AUDIO_ITEMS || []).filter((a) => a.group === g.id).flatMap((a) => a.tracks || []);
-    if (tracks.length < 2) return;
-    projectsById.set(`playlist-${g.id}`, {
-        id: `playlist-${g.id}`,
-        isAudio: true,
-        title: `${g.title} · all tracks`,
-        meta: `${tracks.length} tracks`,
-        tags: [],
-        summary: "The tracks from this folder, one after another.",
-        image: (window.AUDIO_ITEMS || []).find((a) => a.group === g.id)?.cover,
-        tracks
+// Art gallery pieces get the same detail sheet as the Home art card.
+document.querySelectorAll(".gallery [data-cover]").forEach((button) => {
+    const li = button.closest("li");
+    const img = button.querySelector("img");
+    if (!li || !img) return;
+    const id = `art-${button.dataset.cover}`;
+    const caption = li.querySelector("figcaption")?.cloneNode(true);
+    caption?.querySelector("strong")?.remove();
+    projectsById.set(id, {
+        id,
+        title: li.querySelector("figcaption strong")?.textContent.trim() || img.alt,
+        meta: li.closest(".group")?.querySelector("h2")?.textContent.trim() || "Art",
+        summary: caption?.textContent.trim() || "",
+        tags: JSON.parse(li.dataset.tags || "[]"),
+        image: (img.dataset.full || img.getAttribute("src")).replace(/^\.\.\//, ""),
+        alt: img.alt,
+        contain: true
     });
+    li.dataset.project = id;
 });
+
 const projectDialog = document.createElement("dialog");
 projectDialog.className = "project-dialog";
 projectDialog.setAttribute("aria-label", "Project details");
-projectDialog.innerHTML = `<div class="dialog-content"></div>
-    <div class="dialog-nav">
-        <div class="dialog-pager">
-            <button type="button" class="dialog-arrow" data-dialog-step="-1" aria-label="Previous project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
-            <span class="dialog-counter" aria-live="polite"></span>
-            <button type="button" class="dialog-arrow" data-dialog-step="1" aria-label="Next project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
-        </div>
-        <form method="dialog" class="dialog-close-form"><button type="submit" class="dialog-close" aria-label="Close project details">&times;</button></form>
+// The close button floats on the image; the project pager sits beside the title.
+const dialogClose = `<div class="dialog-image-controls">
+        <form method="dialog" class="dialog-close-form"><button type="submit" class="dialog-close" autofocus aria-label="Close project details"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></form>
     </div>`;
+const dialogPager = `<div class="dialog-pager" role="group" aria-label="Project navigation">
+        <button type="button" class="dialog-step" data-dialog-step="-1" aria-label="Previous project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
+        <span class="dialog-counter" aria-live="polite"></span>
+        <button type="button" class="dialog-step" data-dialog-step="1" aria-label="Next project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
+    </div>`;
+projectDialog.innerHTML = `<div class="dialog-scroll"><div class="dialog-content"></div></div>
+    <div class="dialog-scrollbar" aria-hidden="true"><span></span></div>`;
 document.body.appendChild(projectDialog);
+const dialogScroll = projectDialog.querySelector(".dialog-scroll");
+const dialogScrollbar = projectDialog.querySelector(".dialog-scrollbar");
+const dialogThumb = dialogScrollbar.firstElementChild;
+const scrollRange = () => Math.max(0, dialogScroll.scrollHeight - dialogScroll.clientHeight);
+
+// A thin bar drawn over the edge: no reserved gutter, so the pager never shifts.
+function updateDialogScrollbar() {
+    const range = scrollRange();
+    dialogScrollbar.hidden = range < 2;
+    if (range < 2) return;
+    const travel = dialogScrollbar.clientHeight;
+    const thumbHeight = Math.max(28, Math.round(travel * dialogScroll.clientHeight / dialogScroll.scrollHeight));
+    dialogThumb.style.height = `${thumbHeight}px`;
+    dialogThumb.style.top = `${Math.round((dialogScroll.scrollTop / range) * (travel - thumbHeight))}px`;
+}
+
+dialogScroll.addEventListener("scroll", updateDialogScrollbar, { passive: true });
+dialogScroll.addEventListener("load", updateDialogScrollbar, true);
+window.addEventListener("resize", updateDialogScrollbar);
+
+let dragScroll = null;
+dialogScrollbar.addEventListener("pointerdown", (event) => {
+    const range = scrollRange();
+    if (range < 2) return;
+    event.preventDefault();
+    dialogScrollbar.setPointerCapture(event.pointerId);
+    const rect = dialogScrollbar.getBoundingClientRect();
+    const travel = rect.height - dialogThumb.offsetHeight;
+    if (!event.target.closest(".dialog-scrollbar span")) {
+        const ratio = (event.clientY - rect.top - dialogThumb.offsetHeight / 2) / travel;
+        dialogScroll.scrollTop = Math.min(1, Math.max(0, ratio)) * range;
+    }
+    dragScroll = { y: event.clientY, top: dialogScroll.scrollTop, range, travel };
+});
+dialogScrollbar.addEventListener("pointermove", (event) => {
+    if (!dragScroll) return;
+    dialogScroll.scrollTop = Math.min(dragScroll.range,
+        Math.max(0, dragScroll.top + (event.clientY - dragScroll.y) / dragScroll.travel * dragScroll.range));
+});
+const endDrag = () => { dragScroll = null; };
+dialogScrollbar.addEventListener("pointerup", endDrag);
+dialogScrollbar.addEventListener("pointercancel", endDrag);
 let dialogOpener = null;
 let dialogOrder = [];
 let dialogIndex = 0;
@@ -672,33 +871,54 @@ const renderProject = (index, mediaIndex = 0) => {
                 <button type="button" class="track-trigger" data-track="${i}" aria-label="Play ${esc(t.title)}"><svg class="icon" aria-hidden="true"><use href="#play"></use></svg></button>
                 <audio class="track-player" controls preload="none" controlsList="nodownload" aria-label="${esc(t.title)}"></audio>
             </div>`).join("")}</div>`
-        : p.preview
-            ? (/\.mp4$/.test(p.preview)
-                ? `<video class="dialog-preview" controls loop preload="none" src="${esc(asset(p.preview))}">Your browser can't play this video.</video>`
-                : `<audio class="dialog-preview" controls preload="none" src="${esc(asset(p.preview))}">Your browser can't play this audio.</audio>`)
-            : p.isAudio
-                ? `<p class="track-note">The audio files for this folder are not added yet.</p>`
-                : "";
-    const slideIndex = Math.min(Math.max(mediaIndex, 0), Math.max(mediaItems(p).length - 1, 0));
+        : "";
+    const preview = !hasTracks && p.preview
+        ? (/\.mp4$/.test(p.preview)
+            ? `<video class="dialog-preview" controls loop preload="none" src="${esc(asset(p.preview))}">Your browser can't play this video.</video>`
+            : `<audio class="dialog-preview" controls preload="none" src="${esc(asset(p.preview))}">Your browser can't play this audio.</audio>`)
+        : "";
+    const note = !hasTracks && !p.preview && p.isAudio
+        ? `<p class="track-note">The audio files for this folder are not added yet.</p>`
+        : "";
+    // The player is the point of an audio sheet, so it spans the whole card.
+    const playerBlock = hasTracks
+        ? `<section class="dialog-block dialog-player-block"><h3>Tracks</h3>${trackList}</section>`
+        : preview
+            ? `<section class="dialog-block dialog-player-block"><h3>Preview</h3>${preview}</section>`
+            : "";
+    const extras = !hasTracks && !preview && note
+        ? `<section class="dialog-block">${note}</section>`
+        : "";
+    const slideIndex = Math.min(Math.max(mediaIndex, 0), Math.max(mediaItems(p, true).length - 1, 0));
+    const hero = media(p, true, slideIndex);
     projectDialog.querySelector(".dialog-content").innerHTML = `
-        <div class="dialog-topgrid">
-            <div class="dialog-intro">
+        ${hero ? `<div class="dialog-hero">${hero}${dialogClose}</div>` : dialogClose}
+        <div class="dialog-heading">
+            <div class="dialog-title">
                 <p class="meta">${meta(p)}</p>
                 <h2>${esc(p.title)}</h2>
                 ${p.role ? `<p class="role">${esc(p.role)}</p>` : ""}
-                <p class="summary">${esc(p.summary)}</p>
-                ${trackList}
-                ${tags(p)}
-                ${p.links?.length ? actions(p, "") : ""}
             </div>
-            ${media(p, true, slideIndex)}
-        </div>`;
+            ${dialogPager}
+        </div>
+        <div class="dialog-body">
+            <section class="dialog-block dialog-overview">
+                <h3>Overview</h3>
+                ${p.summary ? `<p class="summary">${esc(p.summary)}</p>` : ""}
+            </section>
+            <div class="dialog-side">
+                ${p.tags?.length ? `<section class="dialog-block"><h3>Technologies</h3>${tags(p)}</section>` : ""}
+                ${extras}
+            </div>
+        </div>
+        ${playerBlock}
+        ${p.links?.length ? `<nav class="dialog-links" aria-label="Links for ${esc(p.title)}">${actions(p)}</nav>` : ""}`;
+    dialogScroll.scrollTop = 0;
+    requestAnimationFrame(updateDialogScrollbar);
     const dialogMedia = projectDialog.querySelector("[data-media-carousel]");
     if (dialogMedia) setMedia(dialogMedia, slideIndex);
     projectDialog.querySelector(".dialog-counter").textContent = `${index + 1} / ${dialogOrder.length}`;
-    const singleProject = dialogOrder.length < 2;
-    projectDialog.querySelector(".dialog-counter").hidden = singleProject;
-    projectDialog.querySelectorAll("[data-dialog-step]").forEach((button) => { button.hidden = singleProject; });
+    projectDialog.querySelector(".dialog-pager").hidden = dialogOrder.length < 2;
     if (hasTracks) {
         const rows = [...projectDialog.querySelectorAll("[data-track-row]")];
         const players = rows.map((row) => row.querySelector(".track-player"));
@@ -769,9 +989,9 @@ document.addEventListener("click", (event) => {
     if (!opener || projectDialog.contains(opener)) return;
     const id = opener.dataset.openProject || opener.dataset.project || opener.dataset.openAudio;
     if (!projectsById.has(id)) return;
-    const scope = opener.closest("[data-featured], [data-code], [data-games], [data-audio]") || document;
+    const scope = opener.closest("[data-featured], [data-code], [data-games], [data-audio], [data-group-filter]") || document;
     dialogOrder = [...new Set([...scope.querySelectorAll("[data-project]")]
-        .filter((el) => el.getBoundingClientRect().height > 0)
+        .filter((el) => !el.hidden)
         .map((el) => el.dataset.project))];
     let index = dialogOrder.indexOf(id);
     if (index < 0) {
@@ -783,27 +1003,8 @@ document.addEventListener("click", (event) => {
     renderProject(index, mediaBox ? Number(mediaBox.dataset.mediaIndex || 0) : 0);
     stopPreview();
     projectDialog.showModal();
+    requestAnimationFrame(updateDialogScrollbar);
 });
-
-// Art page lightbox.
-const lightbox = document.querySelector(".lightbox");
-if (lightbox) {
-    const img = lightbox.querySelector("img");
-    const caption = lightbox.querySelector("p");
-    document.querySelectorAll(".gallery button").forEach((button) => {
-        button.addEventListener("click", () => {
-            const thumb = button.querySelector("img");
-            img.src = thumb.src;
-            img.alt = thumb.alt;
-            img.classList.toggle("pixel-img", button.closest(".pixel") !== null);
-            caption.textContent = button.closest("figure").querySelector("figcaption strong").textContent;
-            lightbox.showModal();
-        });
-    });
-    lightbox.addEventListener("click", (event) => {
-        if (event.target === lightbox) lightbox.close();
-    });
-}
 
 // Contact form: copy the message so it works without an email app installed.
 const form = document.getElementById("contact-form");
