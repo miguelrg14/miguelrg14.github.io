@@ -200,11 +200,11 @@ main,
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 5px;
     width: 2rem;
     height: 2rem;
     padding: 0;
-    border: 1px solid rgb(255 255 255 / 0.35);
+    border: 0;
     border-radius: 8px;
     background: transparent;
     color: #fff;
@@ -213,10 +213,14 @@ main,
 
 .nav-toggle span {
     display: block;
-    width: 1rem;
+    width: 1.15rem;
     height: 2px;
     border-radius: 2px;
     background: currentColor;
+}
+
+.nav-toggle:hover {
+    background: rgb(255 255 255 / 0.12);
 }
 
 .site-nav ul {
@@ -2076,6 +2080,7 @@ img[data-media-open]:focus-visible,
     .nav-toggle {
         order: -1;
         display: flex;
+        margin-right: 0.35rem;
     }
 
     .site-nav {
