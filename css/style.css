@@ -797,6 +797,39 @@ section + section {
     background: rgb(23 48 79 / 0.85);
 }
 
+/* Explicit zoom affordance for video slides, whose native controls own the tap. */
+.media-zoom {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(23 48 79 / 0.62);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.media-zoom:hover,
+.media-zoom:focus-visible {
+    background: rgb(23 48 79 / 0.85);
+}
+
+.media-zoom svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+}
+
 img[data-media-open]:not([hidden]) {
     cursor: zoom-in;
 }
@@ -916,6 +949,14 @@ img[data-media-open]:focus-visible,
 
 .media {
     transition: box-shadow 0.18s;
+}
+
+/* Let the browser keep vertical scrolling while horizontal gestures reach the carousel. */
+.media,
+.image-lightbox .lightbox-stage {
+    touch-action: pan-y;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* The whole card lifts and grows on hover or focus; the media is never cropped. */

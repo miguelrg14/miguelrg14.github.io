@@ -155,13 +155,16 @@ function media(p, dialog = false, index = 0, withActions = false) {
         const zoomable = dialog && item.kind === "image";
         return `<img data-media-slide${hidden}${zoomable ? ` data-media-open role="button" tabindex="-1" aria-label="Enlarge image: ${esc(item.alt || p.title)}"` : ""} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" decoding="async" width="1200" height="750">`;
     }).join("");
+    const mediaZoom = dialog && items.some((item) => item.kind === "video")
+        ? `<button type="button" class="media-zoom" data-media-zoom hidden aria-label="Enlarge video"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>`
+        : "";
     const controls = `${items.length < 2 ? "" : `
         <button type="button" class="media-arrow media-prev" data-media-step="-1" aria-label="Previous media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
         <button type="button" class="media-arrow media-next" data-media-step="1" aria-label="Next media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
         <span class="media-count" aria-live="polite">${index + 1} / ${items.length}</span>`}`;
     return `<div class="media${dialog ? " dialog-media" : ""}${p.contain ? " contain" : ""}" data-media-carousel data-media-index="${index}" style="--cover: url('${esc(items[0].src)}')">
         <span class="media-backdrop" style="background-image: url('${esc(items[0].src)}')" aria-hidden="true"></span>
-        ${slides}${controls}${!dialog && withActions ? `<button type="button" class="media-open" data-open-project="${esc(p.id)}" aria-label="Details of ${esc(p.title)}"></button>` : ""}
+        ${slides}${controls}${mediaZoom}${!dialog && withActions ? `<button type="button" class="media-open" data-open-project="${esc(p.id)}" aria-label="Details of ${esc(p.title)}"></button>` : ""}
     </div>`;
 }
 
@@ -682,6 +685,8 @@ function setMedia(box, index, manual = false) {
         slide.hidden = i !== next;
         if (slide.hasAttribute("data-media-open")) slide.tabIndex = slide.hidden ? -1 : 0;
     });
+    const zoom = box.querySelector("[data-media-zoom]");
+    if (zoom) zoom.hidden = slides[next].tagName !== "VIDEO";
     box.dataset.mediaIndex = String(next);
     if (manual) box.dataset.mediaManual = "true";
     const active = slides[next];
@@ -707,13 +712,10 @@ function setMedia(box, index, manual = false) {
     }
 }
 
-document.addEventListener("click", (event) => {
-    const arrow = event.target.closest("[data-media-step]");
-    if (!arrow) return;
-    const box = arrow.closest("[data-media-carousel]");
+function stepMedia(box, step) {
     const slides = [...box.querySelectorAll("[data-media-slide]")];
+    if (!slides.length) return;
     const current = Number(box.dataset.mediaIndex || 0);
-    const step = Number(arrow.dataset.mediaStep);
     if (box.classList.contains("dialog-media")) {
         setMedia(box, current + step, true);
         return;
@@ -723,6 +725,22 @@ document.addEventListener("click", (event) => {
     // Remember the chosen still so leaving the card stops the loop on an image.
     if (slides[nextIndex].tagName === "IMG") box.dataset.mediaRest = String(nextIndex);
     setMedia(box, nextIndex);
+}
+
+document.addEventListener("click", (event) => {
+    const arrow = event.target.closest("[data-media-step]");
+    if (!arrow) return;
+    const box = arrow.closest("[data-media-carousel]");
+    if (box) stepMedia(box, Number(arrow.dataset.mediaStep));
+});
+
+// A dedicated button keeps video zooming reliable under touch controls.
+document.addEventListener("click", (event) => {
+    const zoom = event.target.closest("[data-media-zoom]");
+    if (!zoom) return;
+    const box = zoom.closest("[data-media-carousel]");
+    const slide = box?.querySelector("[data-media-slide]:not([hidden])");
+    if (slide) openImage(slide, box, slide);
 });
 
 // Full-size image viewer opened from a card or from the project dialog.
@@ -745,6 +763,12 @@ let imageOpener = null;
 let imageSlides = [];
 let imageIndex = 0;
 
+function startZoomVideo(video) {
+    video.play().catch(() => {
+        video.addEventListener("loadeddata", () => video.play().catch(() => {}), { once: true });
+    });
+}
+
 function renderImage() {
     const slide = imageSlides[imageIndex];
     if (!slide) return;
@@ -763,9 +787,9 @@ function renderImage() {
             video.pause();
             video.src = src;
             video.load();
-            video.play().catch(() => {});
+            startZoomVideo(video);
         } else if (video.paused) {
-            video.play().catch(() => {});
+            startZoomVideo(video);
         }
         backdrop.style.backgroundImage = "none";
     } else {
@@ -836,6 +860,12 @@ document.addEventListener("keydown", async (event) => {
     await openImage(slide, box, slide);
 });
 
+function stepZoom(step) {
+    if (imageSlides.length < 2) return;
+    imageIndex = (imageIndex + step + imageSlides.length) % imageSlides.length;
+    renderImage();
+}
+
 imageDialog.addEventListener("click", (event) => {
     if (event.target === imageDialog) {
         imageDialog.close();
@@ -843,8 +873,7 @@ imageDialog.addEventListener("click", (event) => {
     }
     const step = event.target.closest("[data-image-step]");
     if (step) {
-        imageIndex = (imageIndex + Number(step.dataset.imageStep) + imageSlides.length) % imageSlides.length;
-        renderImage();
+        stepZoom(Number(step.dataset.imageStep));
         return;
     }
     if (event.target.closest("[data-image-close]")) imageDialog.close();
@@ -856,16 +885,120 @@ imageDialog.addEventListener("keydown", (event) => {
         imageDialog.close();
         return;
     }
-    if (imageSlides.length < 2) return;
     if (event.key === "ArrowLeft") {
         event.preventDefault();
-        imageIndex = (imageIndex - 1 + imageSlides.length) % imageSlides.length;
-        renderImage();
+        stepZoom(-1);
     }
     if (event.key === "ArrowRight") {
         event.preventDefault();
-        imageIndex = (imageIndex + 1) % imageSlides.length;
-        renderImage();
+        stepZoom(1);
+    }
+});
+
+/* A horizontal touch swipe steps through the same slides as the arrows. Touch
+   events are handled directly so mobile Safari and Chrome behave the same.
+   Vertical scrolling stays with the browser; only a decided horizontal move
+   is used, and the click that follows it is swallowed. */
+let swipeState = null;
+let pendingSwallow = null;
+const SWIPE_MIN = 44;
+
+function clearPendingSwallow() {
+    if (!pendingSwallow) return;
+    pendingSwallow.el.removeEventListener("click", pendingSwallow.handler, true);
+    pendingSwallow = null;
+}
+
+function swallowClick(el) {
+    clearPendingSwallow();
+    const handler = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        el.removeEventListener("click", handler, true);
+        pendingSwallow = null;
+    };
+    el.addEventListener("click", handler, true);
+    pendingSwallow = { el, handler };
+    setTimeout(clearPendingSwallow, 0);
+}
+
+function swipeTarget(el, clientY) {
+    if (!el || typeof el.closest !== "function") return null;
+    if (el.closest(".media-arrow, .media-zoom, .dialog-step, .lightbox-close, .lightbox-arrow")) return null;
+
+    const stage = el.closest(".image-lightbox .lightbox-stage");
+    if (stage && imageDialog.open) {
+        const video = imageDialog.querySelector(".lightbox-video");
+        if (!video.hidden) {
+            const rect = video.getBoundingClientRect();
+            if (clientY > rect.bottom - 48) return null;
+        }
+        return { kind: "zoom", el: stage };
+    }
+
+    const box = el.closest("[data-media-carousel]");
+    if (!box) return null;
+    const video = el.closest("video[data-media-slide]");
+    if (video && video.controls) {
+        const rect = video.getBoundingClientRect();
+        if (clientY > rect.bottom - 48) return null;
+    }
+    return { kind: "carousel", el: box };
+}
+
+function beginSwipe(el, id, x, y) {
+    if (swipeState) return;
+    clearPendingSwallow();
+    const target = swipeTarget(el, y);
+    if (!target) return;
+    swipeState = { ...target, id, x, y, active: false };
+}
+
+function moveSwipe(id, x, y, event) {
+    if (!swipeState || swipeState.id !== id) return;
+    const dx = x - swipeState.x;
+    const dy = y - swipeState.y;
+    if (!swipeState.active && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        swipeState.active = true;
+    }
+    if (swipeState.active && event.cancelable) event.preventDefault();
+}
+
+function endSwipe(id, x, y) {
+    if (!swipeState || swipeState.id !== id) return;
+    const state = swipeState;
+    swipeState = null;
+    if (!state.active) return;
+    const dx = x - state.x;
+    const dy = y - state.y;
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    swallowClick(state.el);
+    const step = dx < 0 ? 1 : -1;
+    if (state.kind === "zoom") stepZoom(step);
+    else stepMedia(state.el, step);
+}
+
+document.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 1) return;
+    const touch = event.touches[0];
+    beginSwipe(event.target, touch.identifier, touch.clientX, touch.clientY);
+}, { passive: true });
+
+document.addEventListener("touchmove", (event) => {
+    if (!swipeState) return;
+    const touch = [...event.touches].find((item) => item.identifier === swipeState.id);
+    if (touch) moveSwipe(swipeState.id, touch.clientX, touch.clientY, event);
+}, { passive: false });
+
+document.addEventListener("touchend", (event) => {
+    if (!swipeState) return;
+    const touch = [...event.changedTouches].find((item) => item.identifier === swipeState.id);
+    if (touch) endSwipe(swipeState.id, touch.clientX, touch.clientY);
+});
+
+document.addEventListener("touchcancel", (event) => {
+    if (swipeState && [...event.changedTouches].some((item) => item.identifier === swipeState.id)) {
+        swipeState = null;
     }
 });
 
