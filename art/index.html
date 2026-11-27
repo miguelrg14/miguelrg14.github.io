@@ -25,17 +25,17 @@
     <link rel="icon" href="../assets/img/favicon.png" sizes="32x32" type="image/png">
     <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="../assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="../css/style.css?v=20261127b15">
-    <script src="../data/thumbs.js?v=20261127b15" defer></script>
+    <link rel="stylesheet" href="../css/style.css?v=20261127b20">
+    <script src="../data/thumbs.js?v=20261127b20" defer></script>
     <script>
         (function () {
             if (location.protocol === "file:") {
                 var pagesRoot = document.documentElement.dataset.root === "../" ? "../" : "";
-                document.write('<script src="' + pagesRoot + 'js/pages.js?v=20261127b15"><\/script>');
+                document.write('<script src="' + pagesRoot + 'js/pages.js?v=20261127b20"><\/script>');
             }
         }());
     </script>
-    <script src="../js/router.js?v=20261127b15" defer></script>
+    <script src="../js/router.js?v=20261127b20" defer></script>
 </head>
 <body data-zone="art">
 <svg xmlns="http://www.w3.org/2000/svg" data-icon-sprite aria-hidden="true">
@@ -170,6 +170,35 @@
 
             <p class="empty" hidden>No results for that combination. <button type="button" class="button ghost small empty-reset">Show all</button></p>
         </div>
+
+        <section class="knowledge" aria-labelledby="art-knowledge">
+            <div class="group-head">
+                <span class="group-badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                <h2 id="art-knowledge">Toolbox</h2>
+            </div>
+            <div class="knowledge-groups">
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4-1 10-10-3-3L5 16l-1 4Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="m14 6 4 4" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>
+                    <h3>2D</h3>
+                    <ul><li>Photoshop</li><li>Illustrator</li><li>Figma</li><li>Adobe Animate</li><li>Pixel art</li></ul>
+                </div>
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 0v10m0 0 9-5m-9 5-9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    <h3>3D</h3>
+                    <ul><li>Blender</li><li>ZBrush</li><li>Substance</li><li>ProBuilder</li><li>Texturing</li></ul>
+                </div>
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+                    <h3>Techniques</h3>
+                    <ul><li>Procedural generation</li><li>Storyboarding</li><li>Shaders / VFX</li><li>Perlin noise</li><li>WebGL</li></ul>
+                </div>
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                    <h3>Pipeline</h3>
+                    <ul><li>Unity</li><li>Unreal Engine</li><li>Git</li><li>GitHub Pages</li></ul>
+                </div>
+            </div>
+        </section>
 
     </main>
 

@@ -759,8 +759,74 @@ body[data-zone] .button[aria-current="page"] {
     margin: 0;
 }
 
+/* Toolbox closes the shelf with the same head as a category, then plain tags. */
+.knowledge {
+    margin: 2.5rem 0 0;
+}
+
+.knowledge .group-head {
+    margin-bottom: 0.85rem;
+}
+
+.knowledge-groups {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem 1.1rem;
+}
+
+.knowledge-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem 0.45rem;
+}
+
+.knowledge-group > svg {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    color: var(--zone-accent);
+}
+
+.knowledge-group h3 {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.knowledge-group ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.knowledge-group li {
+    padding: 0.2em 0.6em;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
 section + section {
     margin-top: 3rem;
+}
+
+@media (max-width: 36rem) {
+    .knowledge-group {
+        width: 100%;
+    }
 }
 
 /* ---------- Project cards (home, Code page) ---------- */

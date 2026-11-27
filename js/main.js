@@ -772,6 +772,7 @@ if (codeBox) {
 
     const tabs = scope.querySelector("[data-group-tabs]");
     const categoryMenu = scope.querySelector(".filter-bar .group-filters");
+    const knowledge = scope.querySelector(".knowledge");
     if (tabs) {
         const total = orderedGroups.reduce((sum, g) => sum + projectsIn(g).length, 0);
         const options = [
@@ -779,6 +780,7 @@ if (codeBox) {
             { id: "grouped", title: "Grouped", count: total },
             ...orderedGroups.map((g) => ({ id: g.id, title: g.title, count: projectsIn(g).length }))
         ];
+        if (knowledge) options.push({ id: "toolbox", title: "Toolbox", count: knowledge.querySelectorAll("li").length });
         const legend = esc(tabs.dataset.legend || "Show one category");
         tabs.innerHTML = `<legend class="visually-hidden">${legend}</legend>` +
             options.map((g) => `<button type="button" data-group="${esc(g.id)}" aria-pressed="${g.id === "all"}">${esc(g.title)} <span class="count">${g.count}</span></button>`).join("");
@@ -791,6 +793,12 @@ if (codeBox) {
     const applyFilters = () => {
         let shown = 0;
         const flat = activeGroup === "all";
+        const toolbox = activeGroup === "toolbox";
+        codeBox.hidden = toolbox;
+        // Toolbox is one more category: All and Grouped keep it at the end,
+        // a real project category replaces it, and selecting it hides the shelf.
+        if (knowledge) knowledge.hidden = !(flat || activeGroup === "grouped" || toolbox);
+        if (tagFilters) tagFilters.hidden = toolbox;
         codeBox.classList.toggle("flat", flat);
         codeBox.querySelectorAll(".group").forEach((group) => {
             const groupMatch = flat || activeGroup === "grouped" || group.dataset.group === activeGroup;
@@ -866,6 +874,7 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
     const scope = box.closest("main") || document;
     const groups = [...box.querySelectorAll(".group[data-group]")];
     const tabs = scope.querySelector("[data-section-tabs]");
+    const knowledge = scope.querySelector(".knowledge");
     if (!groups.length || !tabs) return;
     const items = [...box.querySelectorAll("[data-item]")];
     box.insertAdjacentHTML("afterbegin", allHead());
@@ -880,6 +889,7 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
             count: count(group)
         }))
     ];
+    if (knowledge) options.push({ id: "toolbox", title: "Toolbox", count: knowledge.querySelectorAll("li").length });
     const legend = esc(tabs.dataset.legend || "Show one category");
     tabs.innerHTML = `<legend class="visually-hidden">${legend}</legend>` +
         options.map((option) => `<button type="button" data-group="${esc(option.id)}" aria-pressed="${option.id === "all"}">${esc(option.title)} <span class="count">${option.count}</span></button>`).join("");
@@ -905,6 +915,10 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
     const applyFilters = () => {
         let shown = 0;
         const flat = activeGroup === "all";
+        const toolbox = activeGroup === "toolbox";
+        box.hidden = toolbox;
+        if (knowledge) knowledge.hidden = !(flat || activeGroup === "grouped" || toolbox);
+        if (tagFilters) tagFilters.hidden = toolbox;
         box.classList.toggle("flat", flat);
         groups.forEach((group) => {
             const groupMatch = flat || activeGroup === "grouped" || group.dataset.group === activeGroup;

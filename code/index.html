@@ -25,19 +25,19 @@
     <link rel="icon" href="../assets/img/favicon.png" sizes="32x32" type="image/png">
     <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="../assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="../css/style.css?v=20261127b15">
-    <script src="../data/project-media.js?v=20261127b15" defer></script>
-    <script src="../data/projects.js?v=20261127b15" defer></script>
-    <script src="../data/thumbs.js?v=20261127b15" defer></script>
+    <link rel="stylesheet" href="../css/style.css?v=20261127b20">
+    <script src="../data/project-media.js?v=20261127b20" defer></script>
+    <script src="../data/projects.js?v=20261127b20" defer></script>
+    <script src="../data/thumbs.js?v=20261127b20" defer></script>
     <script>
         (function () {
             if (location.protocol === "file:") {
                 var pagesRoot = document.documentElement.dataset.root === "../" ? "../" : "";
-                document.write('<script src="' + pagesRoot + 'js/pages.js?v=20261127b15"><\/script>');
+                document.write('<script src="' + pagesRoot + 'js/pages.js?v=20261127b20"><\/script>');
             }
         }());
     </script>
-    <script src="../js/router.js?v=20261127b15" defer></script>
+    <script src="../js/router.js?v=20261127b20" defer></script>
 </head>
 <body data-zone="code">
 <svg xmlns="http://www.w3.org/2000/svg" data-icon-sprite aria-hidden="true">
@@ -113,6 +113,35 @@
         <div data-code>
             <noscript><p>The repository list needs JavaScript. See them all on <a href="https://github.com/miguelrg14?tab=repositories">GitHub</a>.</p></noscript>
         </div>
+        <section class="knowledge" aria-labelledby="code-knowledge">
+            <div class="group-head">
+                <span class="group-badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
+                <h2 id="code-knowledge">Toolbox</h2>
+            </div>
+            <div class="knowledge-groups">
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <h3>Languages</h3>
+                    <ul><li>C++20</li><li>C#</li><li>JavaScript</li><li>Python</li><li>SQL</li></ul>
+                </div>
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 0v10m0 0 9-5m-9 5-9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                    <h3>Graphics</h3>
+                    <ul><li>OpenGL</li><li>GLSL</li><li>ECS</li><li>ImGui</li><li>VFX Graph</li><li>ShaderLab</li></ul>
+                </div>
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+                    <h3>Techniques</h3>
+                    <ul><li>Data-oriented design</li><li>Behaviour trees</li><li>Minimax / alpha-beta</li><li>Q-learning</li><li>TCP networking</li></ul>
+                </div>
+                <div class="knowledge-group">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+                    <h3>Tooling</h3>
+                    <ul><li>Visual Studio</li><li>Premake / CMake</li><li>Git</li><li>GitHub Actions</li><li>GoogleTest</li><li>html-validate</li></ul>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer class="site-footer">
