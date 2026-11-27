@@ -395,6 +395,18 @@ const soundToggle = soundBar.querySelector(".soundbar-toggle");
 const soundProgress = soundBar.querySelector(".soundbar-progress");
 const soundTime = soundBar.querySelector(".soundbar-time");
 let playlist = [];
+
+// The player floats above the page or the details sheet. Reserve its real
+// height so the last track can always be scrolled out from under it.
+const syncSoundbarSpace = () => {
+    if (soundBar.hidden) {
+        document.documentElement.style.removeProperty("--soundbar-space");
+        return;
+    }
+    const space = Math.ceil(soundBar.getBoundingClientRect().height + 24);
+    document.documentElement.style.setProperty("--soundbar-space", `${space}px`);
+};
+window.addEventListener("resize", syncSoundbarSpace);
 let playlistIndex = 0;
 let soundKey = "";
 let soundOnTrack = null;
@@ -412,6 +424,7 @@ const hideSoundBar = () => {
     soundOnTrack = null;
     soundBar.classList.remove("has-queue");
     soundPlaying(false);
+    syncSoundbarSpace();
 };
 
 const formatTime = (seconds) => {
@@ -452,6 +465,7 @@ const playPlaylistIndex = (index) => {
     soundProgress.value = "0";
     soundTime.textContent = "0:00";
     soundBar.hidden = false;
+    syncSoundbarSpace();
     soundPlayer.play().then(() => soundPlaying(true)).catch(() => soundPlaying(false));
     soundOnTrack?.(index);
 };
@@ -816,8 +830,26 @@ imageDialog.addEventListener("keydown", (event) => {
     }
 });
 
+// A transient focus must not light up the card it belongs to, whether it comes
+// from a closed viewer or from pressing arrow keys over an already focused control.
+function quietFocus(target) {
+    if (!target || target.classList.contains("focus-quiet")) return;
+    target.classList.add("focus-quiet");
+    target.addEventListener("blur", () => target.classList.remove("focus-quiet"), { once: true });
+}
+
+function restoreFocusSafely(target) {
+    if (!target) return;
+    quietFocus(target);
+    target.focus({ preventScroll: true });
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key.startsWith("Arrow")) quietFocus(document.activeElement);
+});
+
 imageDialog.addEventListener("close", () => {
-    requestAnimationFrame(() => imageOpener?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => restoreFocusSafely(imageOpener));
 });
 
 // Short muted previews: show the video slide while a card is hovered or focused.
@@ -997,6 +1029,9 @@ const renderProject = (index, mediaIndex = 0) => {
         : "";
     const slideIndex = Math.min(Math.max(mediaIndex, 0), Math.max(mediaItems(p, true).length - 1, 0));
     const hero = media(p, true, slideIndex);
+    const focusedBefore = document.activeElement;
+    const keepDialogFocus = projectDialog.contains(focusedBefore);
+    const focusStep = focusedBefore?.dataset?.dialogStep;
     projectDialog.querySelector(".dialog-content").innerHTML = `
         ${hero ? `<div class="dialog-hero">${hero}${dialogClose}</div>` : dialogClose}
         <div class="dialog-heading">
@@ -1025,6 +1060,13 @@ const renderProject = (index, mediaIndex = 0) => {
     if (dialogMedia) setMedia(dialogMedia, slideIndex);
     projectDialog.querySelector(".dialog-counter").textContent = `${index + 1} / ${dialogOrder.length}`;
     projectDialog.querySelector(".dialog-pager").hidden = dialogOrder.length < 2;
+    // Re-rendering removes the focused control; keep arrow navigation alive.
+    if (keepDialogFocus && projectDialog.open) {
+        const nextFocus = projectDialog.querySelector(
+            focusStep ? `[data-dialog-step="${focusStep}"]` : ".dialog-close"
+        );
+        if (nextFocus) restoreFocusSafely(nextFocus);
+    }
     if (hasTracks) {
         const rows = [...projectDialog.querySelectorAll("[data-track-row]")];
         const onTrack = (i) => rows.forEach((row, j) => row.classList.toggle("is-current", j === i));
@@ -1072,7 +1114,7 @@ projectDialog.addEventListener("close", () => {
     const target = dialogOpener?.matches(".audio-art")
         ? dialogOpener.parentElement.querySelector(".audio-open")
         : dialogOpener?.querySelector("[data-open-project]") || dialogOpener;
-    requestAnimationFrame(() => target?.focus());
+    requestAnimationFrame(() => restoreFocusSafely(target));
 });
 
 document.addEventListener("click", (event) => {

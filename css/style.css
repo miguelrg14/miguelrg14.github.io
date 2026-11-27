@@ -900,7 +900,7 @@ img[data-media-open]:focus-visible,
 }
 
 .card:hover .media,
-.card:has(:focus-visible) .media {
+.card:has(:focus-visible:not(.focus-quiet)) .media {
     box-shadow: 0 0 0 1px var(--card-ring), 0 8px 18px var(--card-shadow);
 }
 
@@ -910,7 +910,7 @@ img[data-media-open]:focus-visible,
 
 /* The whole card lifts and grows on hover or focus; the media is never cropped. */
 :is(.card, .games .game, .audio-card, .gallery li):hover,
-:is(.card, .games .game, .audio-card, .gallery li):has(:focus-visible) {
+:is(.card, .games .game, .audio-card, .gallery li):has(:focus-visible:not(.focus-quiet)) {
     transform: translateY(-3px) scale(1.02);
 }
 
@@ -964,7 +964,7 @@ img[data-media-open]:focus-visible,
 }
 
 .games .game:hover,
-.games .game:has(:focus-visible) {
+.games .game:has(:focus-visible:not(.focus-quiet)) {
     box-shadow: 0 0 0 1px var(--card-ring), 0 10px 22px var(--card-shadow);
 }
 
@@ -1105,12 +1105,12 @@ img[data-media-open]:focus-visible,
 }
 
 :is([data-featured], [data-code]) .card:hover,
-:is([data-featured], [data-code]) .card:has(:focus-visible) {
+:is([data-featured], [data-code]) .card:has(:focus-visible:not(.focus-quiet)) {
     box-shadow: 0 0 0 1px var(--card-ring), 0 10px 22px var(--card-shadow);
 }
 
 :is([data-featured], [data-code]) .card:hover .media,
-:is([data-featured], [data-code]) .card:has(:focus-visible) .media {
+:is([data-featured], [data-code]) .card:has(:focus-visible:not(.focus-quiet)) .media {
     box-shadow: none;
 }
 
@@ -1501,7 +1501,7 @@ body[data-zone] .filters button[aria-pressed="true"],
 }
 
 .gallery li:hover,
-.gallery li:has(:focus-visible) {
+.gallery li:has(:focus-visible:not(.focus-quiet)) {
     box-shadow: 0 0 0 1px var(--card-ring), 0 10px 22px var(--card-shadow);
 }
 
@@ -2248,7 +2248,7 @@ body[data-zone] .filters button[aria-pressed="true"],
 }
 
 .audio-card:hover,
-.audio-card:has(:focus-visible) {
+.audio-card:has(:focus-visible:not(.focus-quiet)) {
     box-shadow: 0 0 0 1px var(--card-ring), 0 10px 22px var(--card-shadow);
 }
 
@@ -2342,8 +2342,11 @@ body[data-zone] .filters button[aria-pressed="true"],
     display: none;
 }
 
-body:has(.soundbar:not([hidden])) {
-    padding-bottom: 5rem;
+/* The floating player covers the bottom of whatever scrolls, so both the page
+   and the details sheet reserve its measured height plus a small gap. */
+body:has(> .soundbar:not([hidden])),
+.project-dialog:has(> .soundbar:not([hidden])) .dialog-scroll {
+    padding-bottom: var(--soundbar-space, 5rem);
 }
 
 .soundbar-cover {
@@ -2774,7 +2777,8 @@ main:has(.share-card) {
 
 .share-links {
     display: grid;
-    width: 100%;
+    width: min(100%, 19rem);
+    margin-inline: auto;
     gap: 0.5rem;
 }
 
@@ -3195,5 +3199,12 @@ main:has(.share-card) {
     .group .games .game .context {
         font-size: 0.75rem;
     }
+}
+
+/* Focus returned by a closed viewer is transient: no halo on its card. */
+.focus-quiet:focus-visible,
+img.focus-quiet:focus-visible,
+button.focus-quiet:focus-visible {
+    outline: none;
 }
 
