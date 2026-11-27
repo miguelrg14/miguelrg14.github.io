@@ -148,7 +148,9 @@ function media(p, dialog = false, index = 0, withActions = false) {
     const slides = items.map((item, i) => {
         const hidden = i === index ? "" : " hidden";
         if (item.kind === "video") {
-            return `<video data-media-slide${hidden} data-src="${esc(item.src)}" muted loop playsinline${dialog ? " controls" : ""} preload="none" aria-label="${esc(item.alt)}"></video>`;
+            const label = dialog ? `Enlarge video: ${esc(item.alt)}` : esc(item.alt);
+            const open = dialog ? " data-media-open" : "";
+            return `<video data-media-slide${hidden}${open} data-src="${esc(item.src)}" muted loop playsinline${dialog ? " controls" : ""} preload="none" aria-label="${label}"></video>`;
         }
         const zoomable = dialog && item.kind === "image";
         return `<img data-media-slide${hidden}${zoomable ? ` data-media-open role="button" tabindex="-1" aria-label="Enlarge image: ${esc(item.alt || p.title)}"` : ""} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" decoding="async" width="1200" height="750">`;
@@ -731,7 +733,8 @@ imageDialog.innerHTML = `<span class="lightbox-backdrop" aria-hidden="true"></sp
     <div class="lightbox-stage">
         <button type="button" class="lightbox-close" data-image-close aria-label="Close enlarged image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
         <button type="button" class="dialog-arrow lightbox-arrow lightbox-prev" data-image-step="-1" aria-label="Previous image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
-        <img alt="" role="button" tabindex="0" aria-label="Close enlarged image" data-image-close>
+        <img class="lightbox-image" alt="" role="button" tabindex="0" aria-label="Close enlarged image" data-image-close>
+        <video class="lightbox-video" controls muted loop playsinline hidden aria-label="Enlarged video"></video>
         <button type="button" class="dialog-arrow lightbox-arrow lightbox-next" data-image-step="1" aria-label="Next image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
     </div>
     <div class="lightbox-bar">
@@ -745,57 +748,92 @@ let imageIndex = 0;
 function renderImage() {
     const slide = imageSlides[imageIndex];
     if (!slide) return;
-    const img = imageDialog.querySelector("img");
-    if (slide.naturalWidth && slide.naturalHeight) {
-        img.setAttribute("width", slide.naturalWidth);
-        img.setAttribute("height", slide.naturalHeight);
+    const isVideo = slide.tagName === "VIDEO";
+    const img = imageDialog.querySelector(".lightbox-image");
+    const video = imageDialog.querySelector(".lightbox-video");
+    const backdrop = imageDialog.querySelector(".lightbox-backdrop");
+    const bar = imageDialog.querySelector(".lightbox-bar");
+    const src = slide.currentSrc || slide.src || slide.dataset.src;
+
+    if (isVideo) {
+        img.hidden = true;
+        img.removeAttribute("src");
+        video.hidden = false;
+        if (video.getAttribute("src") !== src) {
+            video.pause();
+            video.src = src;
+            video.load();
+            video.play().catch(() => {});
+        } else if (video.paused) {
+            video.play().catch(() => {});
+        }
+        backdrop.style.backgroundImage = "none";
     } else {
-        img.removeAttribute("width");
-        img.removeAttribute("height");
+        video.pause();
+        video.hidden = true;
+        video.removeAttribute("src");
+        video.load();
+        img.hidden = false;
+        if (slide.naturalWidth && slide.naturalHeight) {
+            img.setAttribute("width", slide.naturalWidth);
+            img.setAttribute("height", slide.naturalHeight);
+        } else {
+            img.removeAttribute("width");
+            img.removeAttribute("height");
+        }
+        img.src = src;
+        img.alt = slide.alt || "";
+        backdrop.style.backgroundImage = `url("${src.replace(/"/g, "%22")}")`;
     }
-    const src = slide.currentSrc || slide.src;
-    img.src = src;
-    img.alt = slide.alt || "";
-    imageDialog.querySelector(".lightbox-backdrop").style.backgroundImage = `url("${src.replace(/"/g, '\\"')}")`;
-    imageDialog.querySelector(".lightbox-bar p").textContent = `${imageIndex + 1} / ${imageSlides.length}`;
-    imageDialog.querySelector(".lightbox-bar").hidden = imageSlides.length < 2;
+
+    bar.querySelector("p").textContent = `${imageIndex + 1} / ${imageSlides.length}`;
+    bar.hidden = imageSlides.length < 2;
     imageDialog.querySelectorAll("[data-image-step]").forEach((button) => {
         button.hidden = imageSlides.length < 2;
     });
 }
 
-async function openImage(opener, box, image) {
-    imageSlides = [...box.querySelectorAll("img[data-media-slide]")];
+async function openImage(opener, box, slide) {
+    imageSlides = [...box.querySelectorAll("[data-media-slide]")];
     if (!imageSlides.length) return;
-    imageIndex = Math.max(imageSlides.indexOf(image), 0);
-    imageOpener = opener;
-    const zone = image.closest("[data-zone]")?.dataset.zone || document.body.dataset.zone || "";
+    imageIndex = Math.max(imageSlides.indexOf(slide), 0);
+    imageOpener = slide;
+    const zone = slide.closest("[data-zone]")?.dataset.zone || document.body.dataset.zone || "";
     imageDialog.style.setProperty("--card-accent", zone ? `var(--zone-${zone})` : "var(--zone-accent)");
-    await Promise.race([
-        image.decode().catch(() => {}),
-        new Promise((resolve) => setTimeout(resolve, 250))
-    ]);
+    if (slide.tagName === "IMG") {
+        await Promise.race([
+            slide.decode().catch(() => {}),
+            new Promise((resolve) => setTimeout(resolve, 250))
+        ]);
+    }
     renderImage();
     imageOpener.focus({ preventScroll: true });
     imageDialog.showModal();
 }
 
 document.addEventListener("click", async (event) => {
-    const image = event.target.closest("img[data-media-open]");
-    if (!image || image.hidden) return;
-    const box = image.closest("[data-media-carousel]");
+    const slide = event.target.closest("[data-media-open]");
+    if (!slide || slide.hidden) return;
+    // Native video controls own the bottom strip; tapping there must not zoom.
+    if (slide.tagName === "VIDEO" && slide.controls) {
+        const rect = slide.getBoundingClientRect();
+        if (event.clientY > rect.bottom - 48) return;
+    }
+    const box = slide.closest("[data-media-carousel]");
     if (!box) return;
-    await openImage(image, box, image);
+    await openImage(slide, box, slide);
 });
 
 document.addEventListener("keydown", async (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
-    const image = event.target.closest?.("img[data-media-open]");
-    if (!image || image.hidden) return;
+    const slide = event.target.closest?.("[data-media-open]");
+    if (!slide || slide.hidden) return;
+    // Space belongs to the native video controls.
+    if (slide.tagName === "VIDEO" && event.key === " ") return;
     event.preventDefault();
-    const box = image.closest("[data-media-carousel]");
+    const box = slide.closest("[data-media-carousel]");
     if (!box) return;
-    await openImage(image, box, image);
+    await openImage(slide, box, slide);
 });
 
 imageDialog.addEventListener("click", (event) => {
@@ -850,6 +888,10 @@ document.addEventListener("keydown", (event) => {
 });
 
 imageDialog.addEventListener("close", () => {
+    const video = imageDialog.querySelector(".lightbox-video");
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
     requestAnimationFrame(() => restoreFocusSafely(imageOpener));
 });
 
