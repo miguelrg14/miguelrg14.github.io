@@ -1,6 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-root="">
+<html lang="en" data-page="home" data-root="">
 <head>
+    <script>
+        (function () {
+            document.documentElement.classList.add("route-booting");
+            window.__routeBootTimer = setTimeout(function () {
+                document.documentElement.classList.remove("route-booting");
+                window.__routeBootTimer = null;
+            }, 4000);
+        }());
+    </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Miguel Rodríguez Gallego</title>
@@ -16,12 +25,20 @@
     <link rel="icon" href="assets/img/favicon.png" sizes="32x32" type="image/png">
     <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="assets/fonts/nunito.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/style.css?v=20261127c">
-    <script src="data/project-media.js?v=20261127c" defer></script>
-    <script src="data/projects.js?v=20261127c" defer></script>
-    <script src="data/audio.js?v=20261127c" defer></script>
-    <script src="data/thumbs.js?v=20261127c" defer></script>
-    <script src="js/main.js?v=20261127c" defer></script>
+    <link rel="stylesheet" href="css/style.css?v=20261127b15">
+    <script src="data/project-media.js?v=20261127b15" defer></script>
+    <script src="data/projects.js?v=20261127b15" defer></script>
+    <script src="data/audio.js?v=20261127b15" defer></script>
+    <script src="data/thumbs.js?v=20261127b15" defer></script>
+    <script>
+        (function () {
+            if (location.protocol === "file:") {
+                var pagesRoot = document.documentElement.dataset.root === "../" ? "../" : "";
+                document.write('<script src="' + pagesRoot + 'js/pages.js?v=20261127b15"><\/script>');
+            }
+        }());
+    </script>
+    <script src="js/router.js?v=20261127b15" defer></script>
 </head>
 <body class="home">
 <svg xmlns="http://www.w3.org/2000/svg" data-icon-sprite aria-hidden="true">
@@ -62,7 +79,7 @@
             <a class="brand" href="index.html">Miguel<span>rg14</span></a>
             <nav class="site-nav" aria-label="Main">
                 <ul>
-                    <li><a href="index.html" aria-current="page">Home</a></li>
+                    <li><a href="index.html">Home</a></li>
                     <li><a href="games/index.html">Games</a></li>
                     <li><a href="code/index.html">Code</a></li>
                     <li><a href="art/index.html">Art</a></li>

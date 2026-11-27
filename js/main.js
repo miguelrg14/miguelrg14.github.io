@@ -3,6 +3,9 @@
 // and opens the Art lightbox and the project details dialog.
 
 const root = document.documentElement.dataset.root || "";
+// All generated URLs are absolute against the site root, so they keep working
+// when the router swaps the visible page without reloading the document.
+const siteBase = new URL(window.__siteBase || root || ".", location.href);
 
 // Compact header: a menu button replaces the inline nav on very small screens.
 const siteHeader = document.querySelector(".site-header");
@@ -45,11 +48,58 @@ if (siteHeader && siteNav) {
     });
 }
 
+// A quiet back-to-top control, shown only after the reader has moved down.
+const toTop = document.createElement("button");
+toTop.type = "button";
+toTop.className = "to-top";
+toTop.setAttribute("aria-label", "Back to top");
+toTop.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 4 12h5v8h6v-8h5z"/></svg>`;
+document.body.appendChild(toTop);
+toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
+// Header shadow and a 2px scroll-progress line share one passive scroll pass.
+const syncScrollUI = () => {
+    siteHeader?.classList.toggle("is-scrolled", window.scrollY > 8);
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    document.documentElement.style.setProperty("--scroll-progress", progress.toFixed(4));
+    toTop.classList.toggle("is-visible", window.scrollY > Math.min(480, Math.max(80, max * 0.35)));
+};
+syncScrollUI();
+window.addEventListener("scroll", syncScrollUI, { passive: true });
+window.addEventListener("resize", syncScrollUI);
+
 const esc = (text) =>
     String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-const asset = (path) => (/^https?:/.test(path) ? path : root + path);
+// The whole grid fades in once on load: no per-card delay, no movement,
+// and never again when a filter is clicked.
+function enterCards(scope) {
+    const containers = scope === document
+        ? [...document.querySelectorAll("[data-featured], [data-code], [data-games], [data-audio], [data-group-filter]")]
+        : [scope];
+    containers.forEach((el) => {
+        if (!el?.animate) return;
+        el.dataset.fadeBound = "1";
+        el.addEventListener("animationend", (event) => {
+            if (event.target === el && event.animationName === "gridEnter") el.classList.remove("is-entering");
+        });
+        el.classList.add("is-entering");
+    });
+}
+
+const asset = (path) => (/^https?:/.test(path) ? path : new URL(path, siteBase).href);
 const thumbOf = (path) => (window.THUMBS && window.THUMBS[path.replace(/^\.\.\//, "")]) || null;
+
+// A track can open its own page and detail sheet from the player.
+const itemPage = (item) => {
+    const folder = item.isAudio || item.kind === "audio" ? "music"
+        : item.kind === "game" ? "games"
+        : item.kind === "art" ? "art" : "code";
+    const url = new URL(`${folder}/index.html`, siteBase);
+    if (item.id) url.searchParams.set("open", item.id);
+    return url.href;
+};
 
 const tagLabels = {
     "c#": "C#", "c++": "C++", ".net": ".NET", "ai": "AI", "ui": "UI",
@@ -89,6 +139,7 @@ linkFilterMenus();
 
 // A small icon gives each category its own identity without adding numbers.
 const groupIcons = {
+    all: `<rect x="3.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/>`,
     game: `<path d="M7 8h10a4 4 0 0 1 4 4v1a3 3 0 0 1-5.2 2l-1-1H9.2l-1 1A3 3 0 0 1 3 13v-1a4 4 0 0 1 4-4Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M7 11.5v3M5.5 13h3M16 12h.01M18 13.5h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`,
     art: `<path d="m4 20 4-1 10-10-3-3L5 16l-1 4Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="m14 6 4 4" fill="none" stroke="currentColor" stroke-width="1.9"/>`,
     cube: `<path d="m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 0v10m0 0 9-5m-9 5-9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>`,
@@ -107,6 +158,12 @@ const groupIconFor = (id) => {
     if (id === "web") return "web";
     return "code";
 };
+
+// The flat shelf needs the same labelled head as the category sections.
+const allHead = () => `<div class="group-head all-head">
+    <span class="group-badge" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${groupIcons.all}</svg></span>
+    <h2>All</h2>
+</div>`;
 
 function decorateGroupHeads() {
     // Same hue as the page, just slightly different shades per subcategory.
@@ -129,9 +186,9 @@ function decorateGroupHeads() {
 function mediaItems(p, dialog = false) {
     const items = [];
     const cover = dialog ? p.image : thumbOf(p.image || "") || p.image;
-    if (p.image) items.push({ kind: "image", src: asset(cover), alt: p.alt || p.title });
+    if (p.image) items.push({ kind: "image", src: asset(cover), poster: asset(cover), alt: p.alt || p.title });
     const video = p.video || p.coverVideo;
-    if (video) items.push({ kind: "video", src: asset(video), alt: `Video preview of ${p.title}` });
+    if (video) items.push({ kind: "video", src: asset(video), poster: asset(cover), alt: `Video preview of ${p.title}` });
     if (p.extra) items.push({ kind: "image", src: asset(p.extra), alt: `Another view of ${p.title}` });
     const readme = (window.PROJECT_MEDIA && window.PROJECT_MEDIA[p.id]) || [];
     for (const item of readme) {
@@ -139,32 +196,42 @@ function mediaItems(p, dialog = false) {
         if (items.some((existing) => existing.src === src)) continue;
         items.push({ kind: "image", src, alt: item.alt || `Another view of ${p.title}` });
     }
+    // Trailers lead inside the detail sheet; cards keep their fixed cover.
+    if (dialog) return [...items.filter((item) => item.kind === "video"), ...items.filter((item) => item.kind !== "video")];
     return items;
 }
 
 function media(p, dialog = false, index = 0, withActions = false) {
     const items = mediaItems(p, dialog);
     if (!items.length) return "";
+    if (!dialog) {
+        const cover = items[0];
+        const trailer = items.some((item) => item.kind === "video");
+        const contained = p.contain && p.kind !== "art";
+        return `<div class="media card-media${contained ? " contain" : ""}${trailer ? " has-trailer" : ""}" style="--cover: url('${esc(cover.src)}')">
+            <span class="media-backdrop" style="background-image: url('${esc(cover.src)}')" aria-hidden="true"></span>
+            <img class="card-cover" src="${esc(cover.src)}" alt="${esc(cover.alt)}" loading="lazy" decoding="async" width="640" height="360">
+            ${trailer ? `<span class="trailer-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6l9 6-9 6z"/></svg>Trailer</span>` : ""}
+            ${withActions ? `<button type="button" class="media-open" data-open-project="${esc(p.id)}" aria-label="Details of ${esc(p.title)}"></button>` : ""}
+        </div>`;
+    }
     const slides = items.map((item, i) => {
         const hidden = i === index ? "" : " hidden";
         if (item.kind === "video") {
-            const label = dialog ? `Enlarge video: ${esc(item.alt)}` : esc(item.alt);
-            const open = dialog ? " data-media-open" : "";
-            return `<video data-media-slide${hidden}${open} data-src="${esc(item.src)}" muted loop playsinline${dialog ? " controls" : ""} preload="none" aria-label="${label}"></video>`;
+            const poster = item.poster ? ` poster="${esc(item.poster)}"` : "";
+            return `<video data-media-slide${hidden} data-media-open data-src="${esc(item.src)}"${poster} muted playsinline controls preload="none" aria-label="Enlarge video: ${esc(item.alt)}"${dialog ? "" : " loop"}></video>`;
         }
-        const zoomable = dialog && item.kind === "image";
-        return `<img data-media-slide${hidden}${zoomable ? ` data-media-open role="button" tabindex="-1" aria-label="Enlarge image: ${esc(item.alt || p.title)}"` : ""} src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" decoding="async" width="1200" height="750">`;
+        return `<img data-media-slide${hidden} data-media-open role="button" tabindex="-1" aria-label="Enlarge image: ${esc(item.alt || p.title)}" src="${esc(item.src)}" alt="${esc(item.alt)}" loading="lazy" decoding="async">`;
     }).join("");
-    const mediaZoom = dialog && items.some((item) => item.kind === "video")
-        ? `<button type="button" class="media-zoom" data-media-zoom hidden aria-label="Enlarge video"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg></button>`
-        : "";
     const controls = `${items.length < 2 ? "" : `
         <button type="button" class="media-arrow media-prev" data-media-step="-1" aria-label="Previous media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
         <button type="button" class="media-arrow media-next" data-media-step="1" aria-label="Next media of ${esc(p.title)}"><svg class="media-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
-        <span class="media-count" aria-live="polite">${index + 1} / ${items.length}</span>`}`;
-    return `<div class="media${dialog ? " dialog-media" : ""}${p.contain ? " contain" : ""}" data-media-carousel data-media-index="${index}" style="--cover: url('${esc(items[0].src)}')">
+        <span class="media-count" aria-live="polite">${index + 1} / ${items.length}</span>
+        <span class="media-progress" aria-hidden="true"></span>
+        <button type="button" class="media-autoplay" data-autoplay aria-label="Pause automatic slides" aria-pressed="true"><svg class="auto-icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><svg class="auto-icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg></button>`}`;
+    return `<div class="media dialog-media${p.contain ? " contain" : ""}" data-media-carousel data-media-index="${index}" style="--cover: url('${esc(items[0].src)}')">
         <span class="media-backdrop" style="background-image: url('${esc(items[0].src)}')" aria-hidden="true"></span>
-        ${slides}${controls}${mediaZoom}${!dialog && withActions ? `<button type="button" class="media-open" data-open-project="${esc(p.id)}" aria-label="Details of ${esc(p.title)}"></button>` : ""}
+        ${slides}${controls}
     </div>`;
 }
 
@@ -181,12 +248,12 @@ const linkIcons = { play: "play", itch: "itch", video: "youtube", source: "githu
 const linkOrder = { play: 0, itch: 1, source: 2, video: 3, download: 4 };
 const orderedLinks = (p) => [...(p.links || [])].sort((a, b) => (linkOrder[a.kind] ?? 9) - (linkOrder[b.kind] ?? 9));
 
-// Cards show at most three technologies; the full list lives in the dialog.
+// Cards show at most two technologies; the full list lives in the dialog.
 function cardTags(p) {
     const tags = p.tags || [];
     if (!tags.length) return "";
-    const chips = tags.slice(0, 3).map((t) => `<li>${esc(t)}</li>`);
-    if (tags.length > 3) chips.push(`<li class="tag-more">+${tags.length - 3}</li>`);
+    const chips = tags.slice(0, 2).map((t) => `<li>${esc(t)}</li>`);
+    if (tags.length > 2) chips.push(`<li class="tag-more">+${tags.length - 2}</li>`);
     return `<ul class="tags card-tags" aria-label="Technologies">${chips.join("")}</ul>`;
 }
 
@@ -224,7 +291,7 @@ function gameRow(p) {
     return `<article class="game" id="${esc(p.id)}" data-project="${esc(p.id)}" data-item data-tags="${esc(JSON.stringify(search))}">
         ${media(p, false, 0, true)}
         <div class="game-body">
-            <h2>${esc(p.title)}</h2>
+                <h2>${esc(p.title)}</h2>
             ${cardTags(p)}
             ${cardLinks(p)}
         </div>
@@ -275,7 +342,7 @@ const homeArtProject = {
     image: "assets/art/cowboy-digital.webp",
     alt: "Digital illustration of a green-skinned cowboy firing a revolver at sunset",
     contain: true,
-    links: [{ kind: "view", label: "See all art", url: root + "art/index.html" }]
+    links: [{ kind: "view", label: "See all art", url: new URL("art/index.html", siteBase).href }]
 };
 
 document.querySelectorAll("[data-featured]").forEach((list) => {
@@ -288,7 +355,7 @@ document.querySelectorAll("[data-featured]").forEach((list) => {
         cards.push(zoneCard(games, {
             label: "Games",
             icon: "game",
-            href: root + "games/index.html",
+            href: new URL("games/index.html", siteBase).href,
             cta: "View all games"
         }));
     }
@@ -297,7 +364,7 @@ document.querySelectorAll("[data-featured]").forEach((list) => {
             label: "Code",
             icon: "code",
             context: "Engines, graphics and AI projects.",
-            href: root + "code/index.html",
+            href: new URL("code/index.html", siteBase).href,
             cta: "View Code"
         }));
     }
@@ -305,7 +372,7 @@ document.querySelectorAll("[data-featured]").forEach((list) => {
         label: "Art",
         icon: "art",
         context: "Digital art, pixel art and 3D models.",
-        href: root + "art/index.html",
+        href: new URL("art/index.html", siteBase).href,
         cta: "View Art"
     }));
     if (audio) {
@@ -324,7 +391,7 @@ document.querySelectorAll("[data-featured]").forEach((list) => {
             label: "Audio",
             icon: "music",
             context: "Music, game audio and studio work.",
-            href: root + "music/index.html",
+            href: new URL("music/index.html", siteBase).href,
             cta: "View Audio"
         }));
     }
@@ -348,7 +415,7 @@ document.querySelectorAll("[data-games]").forEach((box) => {
             </div>
             <div class="games">${items.map(gameRow).join("")}</div>
         </section>`;
-    }).join("") + `<p class="empty" hidden>Nothing with that combination yet.</p>`;
+    }).join("") + `<p class="empty" hidden>No results for that combination. <button type="button" class="button ghost small empty-reset">Show all</button></p>`;
 });
 
 // Audio page: small square covers, a preview button and the same group filters.
@@ -376,10 +443,10 @@ soundBar.setAttribute("role", "region");
 soundBar.setAttribute("aria-label", "Audio player");
 soundBar.hidden = true;
 soundBar.innerHTML = `
-    <img class="soundbar-cover" alt="" width="48" height="48" hidden>
+    <a class="soundbar-cover-link" href="#" aria-label="Open this item's page" hidden><img class="soundbar-cover" alt="" width="48" height="48" hidden></a>
     <div class="soundbar-info">
-        <strong class="soundbar-title"></strong>
-        <span class="soundbar-meta"><span data-sound-meta></span><span class="soundbar-count" hidden></span></span>
+        <a class="soundbar-title" href="#"></a>
+        <span class="soundbar-meta"><span class="soundbar-eq" aria-hidden="true"><i></i><i></i><i></i></span><span data-sound-meta></span><span class="soundbar-count" hidden></span><button type="button" class="soundbar-resume" hidden>Resume</button></span>
     </div>
     <div class="soundbar-controls">
         <button type="button" class="soundbar-skip" data-sound-step="-1" aria-label="Previous track"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5 8 12l10 7z"/></svg></button>
@@ -388,8 +455,15 @@ soundBar.innerHTML = `
             <svg class="icon soundbar-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
         </button>
         <button type="button" class="soundbar-skip" data-sound-step="1" aria-label="Next track"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5l10 7L6 19z"/></svg></button>
+        <span class="soundbar-volume-control">
+            <button type="button" class="soundbar-mute" aria-label="Mute"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h3l5-4v14l-5-4H4z"/><path class="soundbar-wave" d="M16 9a4 4 0 0 1 0 6m2.5-8.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+            <input class="soundbar-volume-range" type="range" min="0" max="100" value="100" step="1" aria-label="Volume">
+        </span>
     </div>
-    <input class="soundbar-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek">
+    <div class="soundbar-seek">
+        <input class="soundbar-progress" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek">
+        <span class="soundbar-scrub" hidden></span>
+    </div>
     <span class="soundbar-time">0:00</span>
     <button type="button" class="soundbar-close" aria-label="Close player">&times;</button>
     <audio class="soundbar-player" preload="none"></audio>`;
@@ -399,6 +473,11 @@ const soundPlayer = soundBar.querySelector(".soundbar-player");
 const soundToggle = soundBar.querySelector(".soundbar-toggle");
 const soundProgress = soundBar.querySelector(".soundbar-progress");
 const soundTime = soundBar.querySelector(".soundbar-time");
+const soundScrub = soundBar.querySelector(".soundbar-scrub");
+const soundVolumeRange = soundBar.querySelector(".soundbar-volume-range");
+const soundMute = soundBar.querySelector(".soundbar-mute");
+const soundCoverLink = soundBar.querySelector(".soundbar-cover-link");
+const soundTitleLink = soundBar.querySelector(".soundbar-title");
 let playlist = [];
 
 // The player floats above the page or the details sheet. Reserve its real
@@ -406,15 +485,66 @@ let playlist = [];
 const syncSoundbarSpace = () => {
     if (soundBar.hidden) {
         document.documentElement.style.removeProperty("--soundbar-space");
+        syncScrollUI();
         return;
     }
     const space = Math.ceil(soundBar.getBoundingClientRect().height + 24);
     document.documentElement.style.setProperty("--soundbar-space", `${space}px`);
+    syncScrollUI();
 };
 window.addEventListener("resize", syncSoundbarSpace);
 let playlistIndex = 0;
 let soundKey = "";
 let soundOnTrack = null;
+let soundVolume = 1;
+let previousVolume = 1;
+
+// Keep the last track and position for the next page of this tab. Storage can
+// be refused on file://, so every access is guarded.
+const AUDIO_SESSION_KEY = "mrg14-audio-session";
+const SOUNDBAR_MOTION_MS = 180;
+const audioSession = {
+    read() {
+        try {
+            const raw = sessionStorage.getItem(AUDIO_SESSION_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+    },
+    write(state) {
+        try { sessionStorage.setItem(AUDIO_SESSION_KEY, JSON.stringify(state)); } catch { /* storage disabled */ }
+    },
+    clear() {
+        try { sessionStorage.removeItem(AUDIO_SESSION_KEY); } catch { /* storage disabled */ }
+    }
+};
+const resumeButton = soundBar.querySelector(".soundbar-resume");
+let lastSessionSave = 0;
+
+const saveAudioSession = () => {
+    if (!playlist.length || soundBar.hidden) return;
+    lastSessionSave = Date.now();
+    audioSession.write({
+        tracks: playlist,
+        index: playlistIndex,
+        time: soundPlayer.currentTime || 0,
+        playing: !soundPlayer.paused,
+        volume: soundVolume,
+        savedAt: lastSessionSave
+    });
+};
+
+const applyVolume = (value, persist = true) => {
+    const next = Math.min(1, Math.max(0, Number(value)));
+    if (!Number.isFinite(next)) return;
+    soundVolume = next;
+    soundPlayer.volume = next;
+    soundVolumeRange.value = String(Math.round(next * 100));
+    soundVolumeRange.setAttribute("aria-valuetext", `${Math.round(next * 100)}%`);
+    soundMute.classList.toggle("is-muted", next === 0);
+    soundMute.setAttribute("aria-label", next === 0 ? "Unmute" : "Mute");
+    if (next > 0) previousVolume = next;
+    if (persist) saveAudioSession();
+};
 
 const soundPlaying = (on) => {
     soundBar.classList.toggle("is-playing", on);
@@ -423,13 +553,22 @@ const soundPlaying = (on) => {
 
 const hideSoundBar = () => {
     soundPlayer.pause();
-    soundBar.hidden = true;
+    audioSession.clear();
+    resumeButton.hidden = true;
+    soundBar.classList.remove("needs-resume");
+    soundBar.classList.remove("is-open");
     soundKey = "";
     playlist = [];
     soundOnTrack = null;
     soundBar.classList.remove("has-queue");
     soundPlaying(false);
-    syncSoundbarSpace();
+    window.setTimeout(() => {
+        if (!soundBar.classList.contains("is-open")) {
+            soundBar.hidden = true;
+            syncSoundbarSpace();
+            syncScrollUI();
+        }
+    }, SOUNDBAR_MOTION_MS);
 };
 
 const formatTime = (seconds) => {
@@ -439,7 +578,7 @@ const formatTime = (seconds) => {
 };
 
 const setTrackInfo = (track, index) => {
-    soundBar.querySelector(".soundbar-title").textContent = track.title || "";
+    soundTitleLink.textContent = track.title || "";
     soundBar.querySelector("[data-sound-meta]").textContent = track.meta || "";
     const count = soundBar.querySelector(".soundbar-count");
     count.textContent = `${index + 1} / ${playlist.length}`;
@@ -452,10 +591,18 @@ const setTrackInfo = (track, index) => {
         cover.removeAttribute("src");
         cover.hidden = true;
     }
+    const target = track.target || (track.itemId ? itemPage(track) : "");
+    [soundCoverLink, soundTitleLink].forEach((link) => {
+        if (target) link.href = target;
+        else link.removeAttribute("href");
+        link.setAttribute("aria-disabled", String(!target));
+        link.title = target ? "Open on its page" : "";
+    });
+    soundCoverLink.hidden = !track.cover;
     soundBar.classList.toggle("has-queue", playlist.length > 1);
 };
 
-const playPlaylistIndex = (index) => {
+const playPlaylistIndex = (index, resumeTime = 0, startPaused = false) => {
     if (index < 0 || index >= playlist.length) {
         hideSoundBar();
         return;
@@ -464,33 +611,74 @@ const playPlaylistIndex = (index) => {
     const track = playlist[index];
     const url = asset(track.src);
     soundPlayer.pause();
+    soundPlayer.volume = soundVolume;
     soundKey = url;
     soundPlayer.src = url;
+    if (startPaused) soundPlayer.load();
     setTrackInfo(track, index);
     soundProgress.value = "0";
     soundTime.textContent = "0:00";
+    if (resumeTime > 0) {
+        const seek = () => {
+            try { soundPlayer.currentTime = Math.min(resumeTime, soundPlayer.duration || resumeTime); } catch { /* not seekable */ }
+            soundTime.textContent = formatTime(soundPlayer.currentTime);
+        };
+        if (soundPlayer.readyState >= 1) seek();
+        else soundPlayer.addEventListener("loadedmetadata", seek, { once: true });
+    }
+    resumeButton.hidden = true;
+    soundBar.classList.remove("needs-resume");
     soundBar.hidden = false;
+    void soundBar.offsetWidth;
+    soundBar.classList.add("is-open");
     syncSoundbarSpace();
-    soundPlayer.play().then(() => soundPlaying(true)).catch(() => soundPlaying(false));
+    syncScrollUI();
+    if (startPaused) {
+        soundPlayer.volume = soundVolume;
+        soundPlaying(false);
+        saveAudioSession();
+    } else {
+        soundPlayer.play()
+            .then(() => {
+                soundPlaying(true);
+                saveAudioSession();
+            })
+            .catch(() => {
+                soundPlayer.volume = soundVolume;
+                soundPlaying(false);
+                resumeButton.hidden = false;
+                soundBar.classList.add("needs-resume");
+            });
+    }
     soundOnTrack?.(index);
 };
 
-const playPlaylist = (tracks, index = 0, context = {}) => {
+const playPlaylist = (tracks, index = 0, context = {}, resumeTime = 0, startPaused = false) => {
     if (!tracks?.length) return;
     playlist = tracks.map((track) => ({
         src: track.src,
         title: track.title,
         meta: track.meta || context.meta || "",
-        cover: track.cover || context.cover || ""
+        cover: track.cover || context.cover || "",
+        target: track.target || context.target || "",
+        itemId: track.itemId || context.itemId || "",
+        kind: track.kind || context.kind || "",
+        isAudio: track.isAudio || context.isAudio || false
     }));
     soundOnTrack = context.onTrack || null;
-    playPlaylistIndex(Math.min(Math.max(index, 0), playlist.length - 1));
+    playPlaylistIndex(Math.min(Math.max(index, 0), playlist.length - 1), resumeTime, startPaused);
 };
 
 soundToggle.addEventListener("click", () => {
-    if (soundPlayer.paused) soundPlayer.play().catch(() => soundPlaying(false));
-    else soundPlayer.pause();
+    if (soundPlayer.paused) {
+        soundPlayer.play().then(() => {
+            resumeButton.hidden = true;
+            soundBar.classList.remove("needs-resume");
+            saveAudioSession();
+        }).catch(() => soundPlaying(false));
+    } else soundPlayer.pause();
 });
+resumeButton.addEventListener("click", () => soundToggle.click());
 soundBar.querySelectorAll("[data-sound-step]").forEach((button) => {
     button.addEventListener("click", () => {
         // Previous restarts the current track, like Spotify does.
@@ -502,27 +690,75 @@ soundBar.querySelectorAll("[data-sound-step]").forEach((button) => {
     });
 });
 soundBar.querySelector(".soundbar-close").addEventListener("click", hideSoundBar);
-soundPlayer.addEventListener("play", () => soundPlaying(true));
-soundPlayer.addEventListener("pause", () => soundPlaying(false));
+soundPlayer.addEventListener("play", () => { soundPlaying(true); saveAudioSession(); });
+soundPlayer.addEventListener("pause", () => { soundPlaying(false); saveAudioSession(); });
 soundPlayer.addEventListener("timeupdate", () => {
     const ratio = soundPlayer.duration ? soundPlayer.currentTime / soundPlayer.duration : 0;
     soundProgress.value = String(ratio * 100);
     soundTime.textContent = formatTime(soundPlayer.currentTime);
+    if (Date.now() - lastSessionSave > 1000) saveAudioSession();
 });
 soundPlayer.addEventListener("ended", () => playPlaylistIndex(playlistIndex + 1));
 soundProgress.addEventListener("input", () => {
     if (soundPlayer.duration) soundPlayer.currentTime = soundPlayer.duration * Number(soundProgress.value) / 100;
+    showScrubAt(Number(soundProgress.value) / 100);
 });
+
+// Hover/focus preview: show the minute and second under the pointer.
+const showScrubAt = (ratio) => {
+    if (!Number.isFinite(soundPlayer.duration) || soundPlayer.duration <= 0) return;
+    const clamped = Math.min(1, Math.max(0, ratio));
+    soundScrub.textContent = formatTime(clamped * soundPlayer.duration);
+    const half = soundScrub.offsetWidth / 2;
+    soundScrub.style.left = `${Math.min(Math.max(clamped * soundProgress.clientWidth, half), soundProgress.clientWidth - half)}px`;
+    soundScrub.hidden = false;
+};
+const hideScrub = () => { soundScrub.hidden = true; };
+soundProgress.addEventListener("pointerenter", (event) => showScrubAt(
+    (event.clientX - soundProgress.getBoundingClientRect().left) / soundProgress.clientWidth
+));
+soundProgress.addEventListener("pointermove", (event) => showScrubAt(
+    (event.clientX - soundProgress.getBoundingClientRect().left) / soundProgress.clientWidth
+));
+soundProgress.addEventListener("pointerleave", hideScrub);
+soundProgress.addEventListener("focus", () => showScrubAt(Number(soundProgress.value) / 100));
+soundProgress.addEventListener("blur", hideScrub);
+
+soundVolumeRange.addEventListener("input", () => applyVolume(Number(soundVolumeRange.value) / 100));
+soundMute.addEventListener("click", () => applyVolume(soundVolume > 0 ? 0 : previousVolume || 1));
+window.addEventListener("pagehide", saveAudioSession);
+
+// A new page continues the track that was playing before the navigation.
+const restoreAudioSession = () => {
+    const saved = audioSession.read();
+    if (!saved?.tracks?.length || !Number.isFinite(saved.time)) return;
+    if (Date.now() - (saved.savedAt || 0) > 10 * 60 * 1000) {
+        audioSession.clear();
+        return;
+    }
+    const index = Math.min(Math.max(Number(saved.index) || 0, 0), saved.tracks.length - 1);
+    const track = saved.tracks[index];
+    const paused = saved.playing === false;
+    applyVolume(Number.isFinite(saved.volume) ? saved.volume : 1, false);
+    playPlaylist(saved.tracks, index, {
+        meta: track.meta || "",
+        cover: track.cover || ""
+    }, saved.time, paused);
+};
+applyVolume(soundVolume, false);
+restoreAudioSession();
 
 // Code page: category bar as the main filter, technology tags as a refinement.
 const codeBox = document.querySelector("[data-code]");
 if (codeBox) {
+    // The router keeps every page in the DOM: scope filter controls to this page.
+    const scope = codeBox.closest("main") || document;
     const [gamesGroup, ...otherGroups] = window.PROJECT_GROUPS;
     const orderedGroups = [...otherGroups, gamesGroup];
     const projectGroups = (p) => p.groups || (p.group ? [p.group] : []);
     const projectsIn = (g) => window.PROJECTS.filter((p) => (g.id === "games" ? p.kind === "game" : projectGroups(p).includes(g.id)));
 
-    codeBox.innerHTML = orderedGroups.map((g) => {
+    codeBox.innerHTML = allHead() + orderedGroups.map((g) => {
         const items = projectsIn(g);
         if (!items.length) return "";
         return `<section class="group" data-group="${esc(g.id)}" aria-labelledby="group-${g.id}">
@@ -532,13 +768,17 @@ if (codeBox) {
             </div>
             <ul class="cards">${items.map(card).join("")}</ul>
         </section>`;
-    }).join("") + `<p class="empty" hidden>Nothing with that combination yet.</p>`;
+    }).join("") + `<p class="empty" hidden>No results for that combination. <button type="button" class="button ghost small empty-reset">Show all</button></p>`;
 
-    const tabs = document.querySelector("[data-group-tabs]");
-    const categoryMenu = document.querySelector(".filter-bar .group-filters");
+    const tabs = scope.querySelector("[data-group-tabs]");
+    const categoryMenu = scope.querySelector(".filter-bar .group-filters");
     if (tabs) {
-        const options = [{ id: "all", title: "All", count: orderedGroups.reduce((sum, g) => sum + projectsIn(g).length, 0) },
-            ...orderedGroups.map((g) => ({ id: g.id, title: g.title, count: projectsIn(g).length }))];
+        const total = orderedGroups.reduce((sum, g) => sum + projectsIn(g).length, 0);
+        const options = [
+            { id: "all", title: "All", count: total },
+            { id: "grouped", title: "Grouped", count: total },
+            ...orderedGroups.map((g) => ({ id: g.id, title: g.title, count: projectsIn(g).length }))
+        ];
         const legend = esc(tabs.dataset.legend || "Show one category");
         tabs.innerHTML = `<legend class="visually-hidden">${legend}</legend>` +
             options.map((g) => `<button type="button" data-group="${esc(g.id)}" aria-pressed="${g.id === "all"}">${esc(g.title)} <span class="count">${g.count}</span></button>`).join("");
@@ -550,9 +790,11 @@ if (codeBox) {
 
     const applyFilters = () => {
         let shown = 0;
+        const flat = activeGroup === "all";
+        codeBox.classList.toggle("flat", flat);
         codeBox.querySelectorAll(".group").forEach((group) => {
-            const groupMatch = activeGroup === "all" || group.dataset.group === activeGroup;
-            group.classList.toggle("filtered", activeGroup !== "all");
+            const groupMatch = flat || activeGroup === "grouped" || group.dataset.group === activeGroup;
+            group.classList.toggle("filtered", !flat && activeGroup !== "grouped");
             let inGroup = 0;
             group.querySelectorAll(".card").forEach((c) => {
                 const tags = JSON.parse(c.dataset.tags);
@@ -564,44 +806,74 @@ if (codeBox) {
             shown += inGroup;
         });
         codeBox.querySelector(".empty").hidden = shown > 0;
+        codeBox.querySelector(".all-head").hidden = shown === 0;
     };
-    const categoryStatus = document.querySelector("[data-category-status]");
+    const categoryStatus = scope.querySelector("[data-category-status]");
     tabs?.addEventListener("click", (event) => {
         const button = event.target.closest("button[data-group]");
         if (!button) return;
         activeGroup = button.dataset.group;
         tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
-        if (categoryStatus) categoryStatus.textContent = buttonLabel(button);
+        if (categoryStatus) categoryStatus.textContent = buttonLabel(button) || "All";
         applyFilters();
     });
 
-    const filterStatus = document.querySelector("[data-filter-status]");
-    const tagFilters = document.querySelector(".filter-bar .tag-filters");
+    const filterStatus = scope.querySelector("[data-filter-status]");
+    const tagFilters = scope.querySelector(".filter-bar .tag-filters");
     keepFilterPanelInView(tagFilters);
 
-    document.querySelectorAll(".filter-bar .filters").forEach((filters) => {
+    scope.querySelectorAll(".filter-bar .filters").forEach((filters) => {
         filters.addEventListener("click", (event) => {
             const button = event.target.closest("button[data-tag]");
             if (!button) return;
             activeTag = button.dataset.tag;
             filters.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
-            if (filterStatus) filterStatus.textContent = button.textContent;
+            if (filterStatus) filterStatus.textContent = button.textContent.trim() || "All";
             applyFilters();
         });
+    });
+
+    codeBox.querySelector(".empty")?.addEventListener("click", (event) => {
+        if (!event.target.closest(".empty-reset")) return;
+        activeGroup = "all";
+        activeTag = "all";
+        tabs?.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.group === "all")));
+        scope.querySelectorAll(".filter-bar .filters button[data-tag]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tag === "all")));
+        if (categoryStatus) categoryStatus.textContent = "All";
+        if (filterStatus) filterStatus.textContent = "All";
+        applyFilters();
     });
 
     applyFilters();
 }
 
+// Card covers are 16:9 boxes, but the source images keep their own proportions.
+// Show any non-16:9 cover whole over its blurred copy; Art keeps its focal crop.
+function fitCardCover(img) {
+    const box = img.closest(".media");
+    if (!box || box.classList.contains("contain") || img.closest('[data-zone="art"]')) return;
+    if (!img.complete || !img.naturalWidth) {
+        img.addEventListener("load", () => fitCardCover(img), { once: true });
+        return;
+    }
+    const ratio = img.naturalWidth / img.naturalHeight;
+    if (Math.abs(ratio - 16 / 9) > 0.02) box.classList.add("contain");
+}
+document.querySelectorAll(".card-cover").forEach(fitCardCover);
+
 // Games, Art and Audio: category tabs switch sections; technology refines within them.
 document.querySelectorAll("[data-group-filter]").forEach((box) => {
+    const scope = box.closest("main") || document;
     const groups = [...box.querySelectorAll(".group[data-group]")];
-    const tabs = document.querySelector("[data-section-tabs]");
+    const tabs = scope.querySelector("[data-section-tabs]");
     if (!groups.length || !tabs) return;
     const items = [...box.querySelectorAll("[data-item]")];
+    box.insertAdjacentHTML("afterbegin", allHead());
     const count = (group) => group.querySelectorAll("[data-item]").length;
+    const total = groups.reduce((sum, group) => sum + count(group), 0);
     const options = [
-        { id: "all", title: "All", count: groups.reduce((sum, group) => sum + count(group), 0) },
+        { id: "all", title: "All", count: total },
+        { id: "grouped", title: "Grouped", count: total },
         ...groups.map((group) => ({
             id: group.dataset.group,
             title: group.querySelector("h2")?.textContent || group.dataset.group,
@@ -611,12 +883,12 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
     const legend = esc(tabs.dataset.legend || "Show one category");
     tabs.innerHTML = `<legend class="visually-hidden">${legend}</legend>` +
         options.map((option) => `<button type="button" data-group="${esc(option.id)}" aria-pressed="${option.id === "all"}">${esc(option.title)} <span class="count">${option.count}</span></button>`).join("");
-    keepFilterPanelInView(document.querySelector(".filter-bar .group-filters"));
+    keepFilterPanelInView(scope.querySelector(".filter-bar .group-filters"));
 
     const tagsOf = (item) => {
         try { return JSON.parse(item.dataset.tags || "[]"); } catch { return []; }
     };
-    const tagFilters = document.querySelector(".filter-bar .tag-filters");
+    const tagFilters = scope.querySelector(".filter-bar .tag-filters");
     const filters = tagFilters?.querySelector(".filters");
     const filterStatus = tagFilters?.querySelector("[data-filter-status]");
     if (filters) {
@@ -632,8 +904,10 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
 
     const applyFilters = () => {
         let shown = 0;
+        const flat = activeGroup === "all";
+        box.classList.toggle("flat", flat);
         groups.forEach((group) => {
-            const groupMatch = activeGroup === "all" || group.dataset.group === activeGroup;
+            const groupMatch = flat || activeGroup === "grouped" || group.dataset.group === activeGroup;
             const groupItems = items.filter((item) => group.contains(item));
             let inGroup = 0;
             groupItems.forEach((item) => {
@@ -642,18 +916,19 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
                 if (match) inGroup++;
             });
             group.hidden = inGroup === 0;
-            group.classList.toggle("filtered", activeGroup !== "all");
+            group.classList.toggle("filtered", !flat && activeGroup !== "grouped");
             shown += inGroup;
         });
         box.querySelector(".empty")?.toggleAttribute("hidden", shown > 0);
+        box.querySelector(".all-head")?.toggleAttribute("hidden", shown === 0);
     };
-    const categoryStatus = document.querySelector("[data-category-status]");
+    const categoryStatus = scope.querySelector("[data-category-status]");
     tabs.addEventListener("click", (event) => {
         const button = event.target.closest("button[data-group]");
         if (!button) return;
         activeGroup = button.dataset.group;
         tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
-        if (categoryStatus) categoryStatus.textContent = buttonLabel(button);
+        if (categoryStatus) categoryStatus.textContent = buttonLabel(button) || "All";
         applyFilters();
     });
 
@@ -662,7 +937,18 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
         if (!button) return;
         activeTag = button.dataset.tag;
         filters.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
-        if (filterStatus) filterStatus.textContent = button.textContent;
+        if (filterStatus) filterStatus.textContent = button.textContent.trim() || "All";
+        applyFilters();
+    });
+
+    box.querySelector(".empty")?.addEventListener("click", (event) => {
+        if (!event.target.closest(".empty-reset")) return;
+        activeGroup = "all";
+        activeTag = "all";
+        tabs.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.group === "all")));
+        filters?.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tag === "all")));
+        if (categoryStatus) categoryStatus.textContent = "All";
+        if (filterStatus) filterStatus.textContent = "All";
         applyFilters();
     });
 
@@ -672,6 +958,121 @@ document.querySelectorAll("[data-group-filter]").forEach((box) => {
 decorateGroupHeads();
 
 // Media carousels: image, video and any extra view can be browsed on each card.
+/* The detail hero advances itself in a loop: trailers play to the end, stills
+   rest for a few seconds, and only the pause control stops the tour. */
+const AUTO_IMAGE_MS = 4500;
+let auto = { box: null, frame: 0, elapsed: 0, last: 0, paused: false, done: false };
+let autoReady = false;
+let autoPausedByUser = false;
+
+function autoBar(box, ratio) {
+    const bar = box?.querySelector(".media-progress");
+    if (bar) bar.style.setProperty("--progress", Math.min(1, Math.max(0, ratio)));
+}
+
+function autoButton(box, mode) {
+    const button = box?.querySelector("[data-autoplay]");
+    if (!button) return;
+    const paused = mode !== "pause";
+    button.classList.toggle("is-paused", paused);
+    button.setAttribute("aria-label", mode === "replay"
+        ? "Replay automatic slides"
+        : paused ? "Resume automatic slides" : "Pause automatic slides");
+    button.setAttribute("aria-pressed", String(!paused));
+}
+
+function stopAuto() {
+    autoPausedByUser = false;
+    if (auto.box) auto.box.classList.remove("auto-paused", "auto-done", "auto-video");
+    if (auto.frame) cancelAnimationFrame(auto.frame);
+    auto = { box: null, frame: 0, elapsed: 0, last: 0, paused: false, done: false };
+}
+
+function pauseAuto() {
+    if (!auto.box || auto.paused) return;
+    auto.paused = true;
+    if (auto.frame) cancelAnimationFrame(auto.frame);
+    auto.frame = 0;
+    auto.box.classList.add("auto-paused");
+    autoButton(auto.box, "play");
+}
+
+function resumeAuto() {
+    if (!auto.box) return;
+    if (!auto.paused && auto.frame) return;
+    autoPausedByUser = false;
+    if (auto.done) {
+        startAuto(auto.box);
+        return;
+    }
+    auto.paused = false;
+    auto.last = performance.now();
+    auto.box.classList.remove("auto-paused");
+    autoButton(auto.box, "pause");
+    auto.frame = requestAnimationFrame(autoTick);
+}
+
+function startAuto(box) {
+    stopAuto();
+    autoReady = false;
+    auto = { box, frame: 0, elapsed: 0, last: performance.now(), paused: false, done: false };
+    box.classList.remove("auto-paused", "auto-done", "auto-video");
+    autoButton(box, "pause");
+    autoBar(box, 0);
+    auto.frame = requestAnimationFrame(autoTick);
+    requestAnimationFrame(() => { autoReady = true; });
+}
+
+function advanceAuto() {
+    const box = auto.box;
+    if (!box) return false;
+    const slides = [...box.querySelectorAll("[data-media-slide]")];
+    if (!slides.length) return false;
+    // The tour loops: after the last slide it starts again from the first.
+    const next = (Number(box.dataset.mediaIndex || 0) + 1) % slides.length;
+    if (next === Number(box.dataset.mediaIndex || 0) && slides[next].tagName === "VIDEO") {
+        slides[next].currentTime = 0;
+        slides[next].play().catch(() => {});
+    }
+    setMedia(box, next);
+    auto.elapsed = 0;
+    auto.last = performance.now();
+    return true;
+}
+
+function autoTick(now) {
+    if (!auto.box || !projectDialog.open || imageDialog.open) {
+        pauseAuto();
+        return;
+    }
+    const box = auto.box;
+    auto.elapsed += now - auto.last;
+    auto.last = now;
+    const active = box.querySelector("[data-media-slide]:not([hidden])");
+    if (!active) {
+        stopAuto();
+        return;
+    }
+    let advance = false;
+    if (active.tagName === "VIDEO" && !active.error && !active.ended && active.readyState > 0) {
+        // Keep the video badges hidden even when the reader pauses playback,
+        // but let the tour continue on its timer instead of freezing forever.
+        box.classList.add("auto-video");
+        if (active.paused) {
+            autoBar(box, Math.min(1, auto.elapsed / AUTO_IMAGE_MS));
+            if (auto.elapsed >= AUTO_IMAGE_MS) advance = true;
+        } else {
+            autoBar(box, active.duration > 0 ? active.currentTime / active.duration : 0);
+        }
+    } else {
+        box.classList.remove("auto-video");
+        autoBar(box, Math.min(1, auto.elapsed / AUTO_IMAGE_MS));
+        if (auto.elapsed >= AUTO_IMAGE_MS) advance = true;
+    }
+    if (advance && !advanceAuto()) return;
+    auto.frame = requestAnimationFrame(autoTick);
+}
+
 function setMedia(box, index, manual = false) {
     const slides = [...box.querySelectorAll("[data-media-slide]")];
     if (!slides.length) return;
@@ -685,11 +1086,24 @@ function setMedia(box, index, manual = false) {
         slide.hidden = i !== next;
         if (slide.hasAttribute("data-media-open")) slide.tabIndex = slide.hidden ? -1 : 0;
     });
-    const zoom = box.querySelector("[data-media-zoom]");
-    if (zoom) zoom.hidden = slides[next].tagName !== "VIDEO";
-    box.dataset.mediaIndex = String(next);
-    if (manual) box.dataset.mediaManual = "true";
     const active = slides[next];
+    box.dataset.mediaIndex = String(next);
+    if (manual && auto.box === box) {
+        auto.elapsed = 0;
+        auto.done = false;
+        box.classList.remove("auto-done");
+    }
+    if (auto.box === box) {
+        auto.elapsed = 0;
+        auto.last = performance.now();
+        autoBar(box, 0);
+        // Arriving at a new slide restarts the tour, even if the video was
+        // paused or the tour was stopped while the previous slide was zoomed.
+        if (manual && projectDialog.open && !imageDialog.open && (auto.paused || !auto.frame)) {
+            resumeAuto();
+        }
+    }
+    if (manual) box.dataset.mediaManual = "true";
     const navSlides = slides;
     const count = box.querySelector(".media-count");
     if (count) {
@@ -715,16 +1129,7 @@ function setMedia(box, index, manual = false) {
 function stepMedia(box, step) {
     const slides = [...box.querySelectorAll("[data-media-slide]")];
     if (!slides.length) return;
-    const current = Number(box.dataset.mediaIndex || 0);
-    if (box.classList.contains("dialog-media")) {
-        setMedia(box, current + step, true);
-        return;
-    }
-    // Every slide, including the looping video/gif preview, stays in the carousel.
-    const nextIndex = (current + step + slides.length) % slides.length;
-    // Remember the chosen still so leaving the card stops the loop on an image.
-    if (slides[nextIndex].tagName === "IMG") box.dataset.mediaRest = String(nextIndex);
-    setMedia(box, nextIndex);
+    setMedia(box, Number(box.dataset.mediaIndex || 0) + step, box.classList.contains("dialog-media"));
 }
 
 document.addEventListener("click", (event) => {
@@ -734,13 +1139,20 @@ document.addEventListener("click", (event) => {
     if (box) stepMedia(box, Number(arrow.dataset.mediaStep));
 });
 
-// A dedicated button keeps video zooming reliable under touch controls.
 document.addEventListener("click", (event) => {
-    const zoom = event.target.closest("[data-media-zoom]");
-    if (!zoom) return;
-    const box = zoom.closest("[data-media-carousel]");
-    const slide = box?.querySelector("[data-media-slide]:not([hidden])");
-    if (slide) openImage(slide, box, slide);
+    const button = event.target.closest("[data-autoplay]");
+    if (!button) return;
+    const box = button.closest(".dialog-media");
+    if (!box || auto.box !== box) return;
+    event.stopPropagation();
+    if (auto.done) {
+        setMedia(box, 0);
+        startAuto(box);
+    } else if (auto.paused) resumeAuto();
+    else {
+        autoPausedByUser = true;
+        pauseAuto();
+    }
 });
 
 // Full-size image viewer opened from a card or from the project dialog.
@@ -754,14 +1166,14 @@ imageDialog.innerHTML = `<span class="lightbox-backdrop" aria-hidden="true"></sp
         <img class="lightbox-image" alt="" role="button" tabindex="0" aria-label="Close enlarged image" data-image-close>
         <video class="lightbox-video" controls muted loop playsinline hidden aria-label="Enlarged video"></video>
         <button type="button" class="dialog-arrow lightbox-arrow lightbox-next" data-image-step="1" aria-label="Next image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
-    </div>
-    <div class="lightbox-bar">
-        <p aria-live="polite"></p>
+        <p class="lightbox-count" aria-live="polite"></p>
     </div>`;
 document.body.appendChild(imageDialog);
 let imageOpener = null;
+let imageBox = null;
 let imageSlides = [];
 let imageIndex = 0;
+let imageStepped = false;
 
 function startZoomVideo(video) {
     video.play().catch(() => {
@@ -776,7 +1188,7 @@ function renderImage() {
     const img = imageDialog.querySelector(".lightbox-image");
     const video = imageDialog.querySelector(".lightbox-video");
     const backdrop = imageDialog.querySelector(".lightbox-backdrop");
-    const bar = imageDialog.querySelector(".lightbox-bar");
+    const count = imageDialog.querySelector(".lightbox-count");
     const src = slide.currentSrc || slide.src || slide.dataset.src;
 
     if (isVideo) {
@@ -810,18 +1222,23 @@ function renderImage() {
         backdrop.style.backgroundImage = `url("${src.replace(/"/g, "%22")}")`;
     }
 
-    bar.querySelector("p").textContent = `${imageIndex + 1} / ${imageSlides.length}`;
-    bar.hidden = imageSlides.length < 2;
+    count.textContent = `${imageIndex + 1} / ${imageSlides.length}`;
+    // The enlarged video has its own controls; a slide counter would only
+    // duplicate the badge already hidden on the video inside the sheet.
+    count.hidden = imageSlides.length < 2 || isVideo;
     imageDialog.querySelectorAll("[data-image-step]").forEach((button) => {
         button.hidden = imageSlides.length < 2;
     });
 }
 
 async function openImage(opener, box, slide) {
+    pauseAuto();
     imageSlides = [...box.querySelectorAll("[data-media-slide]")];
     if (!imageSlides.length) return;
     imageIndex = Math.max(imageSlides.indexOf(slide), 0);
     imageOpener = slide;
+    imageBox = box;
+    imageStepped = false;
     const zone = slide.closest("[data-zone]")?.dataset.zone || document.body.dataset.zone || "";
     imageDialog.style.setProperty("--card-accent", zone ? `var(--zone-${zone})` : "var(--zone-accent)");
     if (slide.tagName === "IMG") {
@@ -863,6 +1280,7 @@ document.addEventListener("keydown", async (event) => {
 function stepZoom(step) {
     if (imageSlides.length < 2) return;
     imageIndex = (imageIndex + step + imageSlides.length) % imageSlides.length;
+    imageStepped = true;
     renderImage();
 }
 
@@ -918,7 +1336,7 @@ document.addEventListener("click", (event) => {
 
 function swipeTarget(el, clientY) {
     if (!el || typeof el.closest !== "function") return null;
-    if (el.closest(".media-arrow, .media-zoom, .dialog-step, .lightbox-close, .lightbox-arrow")) return null;
+    if (el.closest(".media-arrow, .dialog-step, .lightbox-close, .lightbox-arrow")) return null;
 
     const stage = el.closest(".image-lightbox .lightbox-stage");
     if (stage && imageDialog.open) {
@@ -929,6 +1347,9 @@ function swipeTarget(el, clientY) {
         }
         return { kind: "zoom", el: stage };
     }
+
+    const card = el.closest(".media-open");
+    if (card) return { kind: "card", el: card };
 
     const box = el.closest("[data-media-carousel]");
     if (!box) return null;
@@ -967,6 +1388,7 @@ function endSwipe(id, x, y) {
     const dy = y - state.y;
     if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     clickSuppressedUntil = Date.now() + 500;
+    if (state.kind === "card") return;
     const step = dx < 0 ? 1 : -1;
     if (state.kind === "zoom") stepZoom(step);
     else stepMedia(state.el, step);
@@ -996,6 +1418,10 @@ document.addEventListener("touchcancel", (event) => {
     }
 });
 
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pauseAuto();
+});
+
 // A transient focus must not light up the card it belongs to, whether it comes
 // from a closed viewer or from pressing arrow keys over an already focused control.
 function quietFocus(target) {
@@ -1019,7 +1445,25 @@ imageDialog.addEventListener("close", () => {
     video.pause();
     video.removeAttribute("src");
     video.load();
-    requestAnimationFrame(() => restoreFocusSafely(imageOpener));
+    // Whatever was last shown in the zoom becomes the image in the sheet behind it.
+    const chosen = imageSlides[imageIndex];
+    if (imageStepped && imageBox?.isConnected && chosen?.isConnected) {
+        setMedia(imageBox, imageIndex);
+        imageOpener = chosen;
+    }
+    imageBox = null;
+    imageStepped = false;
+    // Closing the viewer returns to the tour unless the reader paused it
+    // explicitly with the button.
+    if (!autoPausedByUser && auto.box && projectDialog.open && (auto.paused || !auto.frame)) {
+        resumeAuto();
+    }
+    // The slide can be hidden by the auto tour while zoomed. Return focus to a
+    // stable control inside the sheet so arrow keys still change projects.
+    const returnTo = projectDialog.open
+        ? projectDialog.querySelector(".dialog-close")
+        : imageOpener;
+    requestAnimationFrame(() => restoreFocusSafely(returnTo));
 });
 
 // Short muted previews: show the video slide while a card is hovered or focused.
@@ -1077,7 +1521,7 @@ const projectsById = new Map([...(window.PROJECTS || []), homeArtProject].map((p
         preview: a.preview,
         tracks: a.tracks || [],
         extra: a.extra,
-        links: a.link ? [{ kind: "view", label: "See it on Games", url: root + a.link }] : []
+        links: a.link ? [{ kind: "view", label: "See it on Games", url: new URL(a.link, siteBase).href }] : []
     });
 });
 // Art gallery pieces get the same detail sheet as the Home art card.
@@ -1105,16 +1549,16 @@ document.querySelectorAll(".gallery [data-cover]").forEach((button) => {
 const projectDialog = document.createElement("dialog");
 projectDialog.className = "project-dialog";
 projectDialog.setAttribute("aria-label", "Project details");
-// The close button floats on the image; the project pager sits beside the title.
-const dialogClose = `<div class="dialog-image-controls">
-        <form method="dialog" class="dialog-close-form"><button type="submit" class="dialog-close" autofocus aria-label="Close project details"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></form>
-    </div>`;
+// The close button stays on the sheet, not in the scrolling content, so it
+// remains in the same spot however far the details are scrolled.
+const dialogClose = `<form method="dialog" class="dialog-close-form"><button type="submit" class="dialog-close" autofocus aria-label="Close project details"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></form>`;
 const dialogPager = `<div class="dialog-pager" role="group" aria-label="Project navigation">
         <button type="button" class="dialog-step" data-dialog-step="-1" aria-label="Previous project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
         <span class="dialog-counter" aria-live="polite"></span>
         <button type="button" class="dialog-step" data-dialog-step="1" aria-label="Next project"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>
     </div>`;
-projectDialog.innerHTML = `<div class="dialog-scroll"><div class="dialog-content"></div></div>
+projectDialog.innerHTML = `${dialogClose}
+    <div class="dialog-scroll"><div class="dialog-content"></div></div>
     <div class="dialog-scrollbar" aria-hidden="true"><span></span></div>`;
 document.body.appendChild(projectDialog);
 const dialogScroll = projectDialog.querySelector(".dialog-scroll");
@@ -1164,6 +1608,7 @@ let dialogOrder = [];
 let dialogIndex = 0;
 
 const renderProject = (index, mediaIndex = 0) => {
+    stopAuto();
     const p = projectsById.get(dialogOrder[index]);
     if (!p) return;
     dialogIndex = index;
@@ -1203,7 +1648,7 @@ const renderProject = (index, mediaIndex = 0) => {
     const keepDialogFocus = projectDialog.contains(focusedBefore);
     const focusStep = focusedBefore?.dataset?.dialogStep;
     projectDialog.querySelector(".dialog-content").innerHTML = `
-        ${hero ? `<div class="dialog-hero">${hero}${dialogClose}</div>` : dialogClose}
+        ${hero ? `<div class="dialog-hero">${hero}</div>` : ""}
         <div class="dialog-heading">
             <div class="dialog-title">
                 <p class="meta">${meta(p)}</p>
@@ -1227,7 +1672,10 @@ const renderProject = (index, mediaIndex = 0) => {
     dialogScroll.scrollTop = 0;
     requestAnimationFrame(updateDialogScrollbar);
     const dialogMedia = projectDialog.querySelector("[data-media-carousel]");
-    if (dialogMedia) setMedia(dialogMedia, slideIndex);
+    if (dialogMedia) {
+        setMedia(dialogMedia, slideIndex);
+        startAuto(dialogMedia);
+    }
     projectDialog.querySelector(".dialog-counter").textContent = `${index + 1} / ${dialogOrder.length}`;
     projectDialog.querySelector(".dialog-pager").hidden = dialogOrder.length < 2;
     // Re-rendering removes the focused control; keep arrow navigation alive.
@@ -1243,6 +1691,10 @@ const renderProject = (index, mediaIndex = 0) => {
         const openTrack = (i) => playPlaylist(p.tracks, i, {
             meta: p.title,
             cover: p.image || p.cover,
+            target: itemPage(p),
+            itemId: p.id,
+            kind: p.kind || "",
+            isAudio: !!p.isAudio,
             onTrack
         });
         rows.forEach((row, i) => row.addEventListener("click", () => {
@@ -1267,6 +1719,26 @@ projectDialog.addEventListener("click", (event) => {
     const arrow = event.target.closest("[data-dialog-step]");
     if (arrow) stepProject(Number(arrow.dataset.dialogStep));
 });
+const keepsAutoTour = "[data-autoplay], [data-media-step], [data-media-open]";
+projectDialog.addEventListener("pointerdown", (event) => {
+    if (!autoReady || !auto.box || !event.target.closest(".dialog-media")) return;
+    if (event.target.closest(keepsAutoTour)) return;
+    pauseAuto();
+});
+projectDialog.addEventListener("focusin", (event) => {
+    if (!autoReady || !auto.box || !event.target.closest(".dialog-media")) return;
+    if (event.target.closest(keepsAutoTour)) return;
+    pauseAuto();
+});
+// Play/pause do not bubble, so listen in capture: restarting a video brings the
+// tour back with it, like stepping to the next slide does.
+projectDialog.addEventListener("play", (event) => {
+    const video = event.target;
+    if (!video.matches?.("[data-media-slide]")) return;
+    const box = video.closest("[data-media-carousel]");
+    if (!box || auto.box !== box || imageDialog.open) return;
+    if (auto.paused || !auto.frame) resumeAuto();
+}, true);
 projectDialog.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft") {
         event.preventDefault();
@@ -1278,6 +1750,7 @@ projectDialog.addEventListener("keydown", (event) => {
     }
 });
 projectDialog.addEventListener("close", () => {
+    stopAuto();
     soundOnTrack = null;
     if (soundBar.parentElement === projectDialog) document.body.appendChild(soundBar);
     projectDialog.querySelectorAll("[data-media-carousel] video").forEach((video) => video.pause());
@@ -1287,12 +1760,12 @@ projectDialog.addEventListener("close", () => {
     requestAnimationFrame(() => restoreFocusSafely(target));
 });
 
-document.addEventListener("click", (event) => {
-    if (event.target.closest("a, [data-media-step], img[data-media-open], .media-arrow")) return;
-    const opener = event.target.closest("[data-open-project], [data-project], [data-open-audio]");
-    if (!opener || projectDialog.contains(opener)) return;
-    const id = opener.dataset.openProject || opener.dataset.project || opener.dataset.openAudio;
-    if (!projectsById.has(id)) return;
+// A link from the player can land on the exact item page and open its sheet.
+const openItemById = (id) => {
+    if (!id || !projectsById.has(id)) return false;
+    const opener = [...document.querySelectorAll("[data-project], [data-open-audio]")]
+        .find((el) => (el.dataset.project || el.dataset.openAudio) === id && !el.closest("main[hidden]"));
+    if (!opener) return false;
     const scope = opener.closest("[data-featured], [data-code], [data-games], [data-audio], [data-group-filter]") || document;
     dialogOrder = [...new Set([...scope.querySelectorAll("[data-project]")]
         .filter((el) => !el.hidden)
@@ -1305,8 +1778,35 @@ document.addEventListener("click", (event) => {
     dialogOpener = opener;
     const mediaBox = opener.closest("[data-project], .audio-art")?.querySelector("[data-media-carousel]");
     renderProject(index, mediaBox ? Number(mediaBox.dataset.mediaIndex || 0) : 0);
-    projectDialog.showModal();
+    opener.scrollIntoView({ block: "center" });
+    if (!projectDialog.open) projectDialog.showModal();
     requestAnimationFrame(updateDialogScrollbar);
+    return true;
+};
+
+const openIdFromUrl = () => {
+    const fromSearch = new URLSearchParams(location.search).get("open");
+    if (fromSearch) return fromSearch;
+    if (location.hash.startsWith("#/")) {
+        const query = location.hash.slice(location.hash.indexOf("?") + 1);
+        if (query !== location.hash) return new URLSearchParams(query).get("open");
+    }
+    return null;
+};
+
+const syncOpenParam = () => {
+    const id = openIdFromUrl();
+    if (id && !projectDialog.open) openItemById(id);
+};
+window.addEventListener("routechange", syncOpenParam);
+syncOpenParam();
+
+document.addEventListener("click", (event) => {
+    if (event.target.closest("a, [data-media-step], img[data-media-open], .media-arrow")) return;
+    const opener = event.target.closest("[data-open-project], [data-project], [data-open-audio]");
+    if (!opener || projectDialog.contains(opener)) return;
+    const id = opener.dataset.openProject || opener.dataset.project || opener.dataset.openAudio;
+    openItemById(id);
 });
 
 // Clipboard helper shared by the contact form and the share page.
@@ -1415,3 +1915,9 @@ if (shareCopy) {
         });
     });
 }
+
+// One quiet entrance for every card already rendered on this page.
+enterCards(document);
+
+// Reveal the routed page now that its content is fully rendered.
+window.__routeReveal?.();
