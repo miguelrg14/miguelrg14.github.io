@@ -729,6 +729,7 @@ imageDialog.className = "image-lightbox";
 imageDialog.setAttribute("aria-label", "Enlarged image");
 imageDialog.innerHTML = `<span class="lightbox-backdrop" aria-hidden="true"></span>
     <div class="lightbox-stage">
+        <button type="button" class="lightbox-close" data-image-close aria-label="Close enlarged image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
         <button type="button" class="dialog-arrow lightbox-arrow lightbox-prev" data-image-step="-1" aria-label="Previous image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg></button>
         <img alt="" role="button" tabindex="0" aria-label="Close enlarged image" data-image-close>
         <button type="button" class="dialog-arrow lightbox-arrow lightbox-next" data-image-step="1" aria-label="Next image"><svg class="dialog-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 17 12l-8 8"/></svg></button>

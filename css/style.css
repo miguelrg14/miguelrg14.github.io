@@ -40,10 +40,10 @@ body[data-zone] { --page-accent-soft: color-mix(in srgb, var(--page-accent) 14%,
 /* Each zone keeps its own hue at Home's lightness; a small share of Home's sky
    keeps the set harmonious. --zone-tray-tint stays stronger for the filter panel. */
 html:has(body[data-zone]) { --zone-bg-pastel: 85%; }
-html:has(body[data-zone="game"])  { --zone-tray-tint: 34%; --page-bg: color-mix(in srgb, #dcfaf3 var(--zone-bg-pastel), var(--bg)); }
-html:has(body[data-zone="code"])  { --zone-tray-tint: 34%; --page-bg: color-mix(in srgb, #d7d9ff var(--zone-bg-pastel), var(--bg)); }
-html:has(body[data-zone="art"])   { --zone-tray-tint: 34%; --page-bg: color-mix(in srgb, #fff0d7 var(--zone-bg-pastel), var(--bg)); }
-html:has(body[data-zone="audio"]) { --zone-tray-tint: 34%; --page-bg: color-mix(in srgb, #d6ebff var(--zone-bg-pastel), var(--bg)); }
+html:has(body[data-zone="game"])  { --zone-tray-tint: 34%; --scroll-thumb: var(--zone-game); --page-bg: color-mix(in srgb, #dcfaf3 var(--zone-bg-pastel), var(--bg)); }
+html:has(body[data-zone="code"])  { --zone-tray-tint: 34%; --scroll-thumb: var(--zone-code); --page-bg: color-mix(in srgb, #d7d9ff var(--zone-bg-pastel), var(--bg)); }
+html:has(body[data-zone="art"])   { --zone-tray-tint: 34%; --scroll-thumb: var(--zone-art); --page-bg: color-mix(in srgb, #fff0d7 var(--zone-bg-pastel), var(--bg)); }
+html:has(body[data-zone="audio"]) { --zone-tray-tint: 34%; --scroll-thumb: var(--zone-audio); --page-bg: color-mix(in srgb, #d6ebff var(--zone-bg-pastel), var(--bg)); }
 
 :root {
     --font: "Nunito", system-ui, sans-serif;
@@ -74,12 +74,20 @@ html:has(body[data-zone="audio"]) { --zone-tray-tint: 34%; --page-bg: color-mix(
 }
 
 html {
+    --scroll-thumb: var(--link);
     background: var(--page-bg, var(--bg));
     scroll-behavior: smooth;
     scroll-padding-top: calc(var(--bar) + 1rem);
     color-scheme: light;
-    scrollbar-color: var(--sky) var(--page-bg, var(--bg));
+    scrollbar-color: var(--scroll-thumb) var(--page-bg, var(--bg));
     scrollbar-width: thin;
+    scrollbar-gutter: stable;
+}
+
+/* A modal sheet owns the scroll: the page behind it must stay put. Reserving
+   the gutter above keeps this from shifting the layout when it opens. */
+html:has(dialog[open]) {
+    overflow: hidden;
 }
 
 /* Chromium/WebKit: a soft pastel rail with a rounded sky thumb. */
@@ -89,17 +97,19 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--page-bg, var(--bg));
+    background: color-mix(in srgb, var(--scroll-thumb) 8%, var(--page-bg, var(--bg)));
 }
 
 ::-webkit-scrollbar-thumb {
-    border: 2px solid var(--page-bg, var(--bg));
+    border: 2px solid transparent;
     border-radius: 999px;
-    background: var(--sky);
+    background: var(--scroll-thumb);
+    background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--sky-deep);
+    background: color-mix(in srgb, var(--scroll-thumb) 75%, black);
+    background-clip: padding-box;
 }
 
 body {
@@ -1589,6 +1599,7 @@ body[data-zone] .filters button[aria-pressed="true"],
 .lightbox {
     max-width: min(94vw, 80rem);
     max-height: 94vh;
+    max-height: 94dvh;
     padding: 0;
     border: 0;
     border-radius: var(--radius);
@@ -1604,6 +1615,7 @@ body[data-zone] .filters button[aria-pressed="true"],
     width: auto;
     height: auto;
     max-height: calc(94vh - 4.5rem);
+    max-height: calc(94dvh - 4.5rem);
     margin-inline: auto;
     object-fit: contain;
 }
@@ -1626,8 +1638,10 @@ body[data-zone] .filters button[aria-pressed="true"],
     flex-direction: column;
     width: min(94vw, 80rem);
     height: min(calc(94vw * 9 / 16), 94vh, 46rem);
+    height: min(calc(94vw * 9 / 16), 94dvh, 46rem);
     max-width: min(94vw, 80rem);
     max-height: 94vh;
+    max-height: 94dvh;
     overflow: hidden;
     padding: 0;
     border: 0;
@@ -1696,6 +1710,7 @@ body[data-zone] .filters button[aria-pressed="true"],
     text-align: center;
 }
 
+/* Same navy disc and white chevron as the card carousel arrows. */
 .image-lightbox .lightbox-arrow {
     position: absolute;
     top: 50%;
@@ -1703,13 +1718,38 @@ body[data-zone] .filters button[aria-pressed="true"],
     width: 2.5rem;
     height: 2.5rem;
     transform: translateY(-50%);
-    border-color: rgb(23 48 79 / 0.3);
-    background: rgb(255 255 255 / 0.9);
+    border: 0;
+    background: rgb(23 48 79 / 0.55);
+    color: #fff;
 }
 
-.image-lightbox .lightbox-arrow:hover {
-    border-color: var(--card-accent, var(--zone-accent));
-    background: color-mix(in srgb, var(--card-accent, var(--zone-accent)) 14%, var(--surface));
+.image-lightbox .lightbox-arrow:hover,
+.image-lightbox .lightbox-arrow:focus-visible {
+    background: rgb(23 48 79 / 0.85);
+}
+
+/* A visible close affordance, since touch screens have no cursor hint. */
+.image-lightbox .lightbox-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(23 48 79 / 0.55);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.image-lightbox .lightbox-close:hover,
+.image-lightbox .lightbox-close:focus-visible {
+    background: rgb(23 48 79 / 0.85);
 }
 
 .image-lightbox .lightbox-prev {
@@ -1736,6 +1776,7 @@ body[data-zone] .filters button[aria-pressed="true"],
     --card-shadow: color-mix(in srgb, var(--card-accent) 26%, transparent);
     width: min(94vw, 72rem);
     max-height: 92vh;
+    max-height: 92dvh;
     padding: 0;
     border: 1px solid var(--card-ring);
     border-radius: var(--radius);
@@ -1755,7 +1796,10 @@ body[data-zone] .filters button[aria-pressed="true"],
 /* The native bar is hidden inside the sheet; ours floats above the edge. */
 .dialog-scroll {
     max-height: 92vh;
+    max-height: 92dvh;
     overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
 
@@ -1905,11 +1949,12 @@ body[data-zone] .filters button[aria-pressed="true"],
     width: 1.75rem;
     height: 1.75rem;
     padding: 0;
-    border: 1px solid rgb(255 255 255 / 0.7);
+    border: 0;
     border-radius: 50%;
     background: rgb(23 48 79 / 0.62);
     color: #fff;
     cursor: pointer;
+    transition: background 0.15s;
 }
 
 .dialog-close svg {
@@ -1924,8 +1969,7 @@ body[data-zone] .filters button[aria-pressed="true"],
 
 .dialog-close:hover,
 .dialog-close:focus-visible {
-    border-color: #fff;
-    background: rgb(255 255 255 / 0.2);
+    background: rgb(23 48 79 / 0.85);
 }
 
 /* The image leads; the title and its links sit right underneath. */
