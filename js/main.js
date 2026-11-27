@@ -900,27 +900,21 @@ imageDialog.addEventListener("keydown", (event) => {
    Vertical scrolling stays with the browser; only a decided horizontal move
    is used, and the click that follows it is swallowed. */
 let swipeState = null;
-let pendingSwallow = null;
+let clickSuppressedUntil = 0;
 const SWIPE_MIN = 44;
 
-function clearPendingSwallow() {
-    if (!pendingSwallow) return;
-    pendingSwallow.el.removeEventListener("click", pendingSwallow.handler, true);
-    pendingSwallow = null;
+function clearClickSuppression() {
+    clickSuppressedUntil = 0;
 }
 
-function swallowClick(el) {
-    clearPendingSwallow();
-    const handler = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        el.removeEventListener("click", handler, true);
-        pendingSwallow = null;
-    };
-    el.addEventListener("click", handler, true);
-    pendingSwallow = { el, handler };
-    setTimeout(clearPendingSwallow, 0);
-}
+/* A real tap produces a click after touchend, sometimes hundreds of ms later on
+   iOS. Suppress that one click, but clear it as soon as a new touch begins. */
+document.addEventListener("click", (event) => {
+    if (Date.now() >= clickSuppressedUntil) return;
+    clickSuppressedUntil = 0;
+    event.preventDefault();
+    event.stopPropagation();
+}, true);
 
 function swipeTarget(el, clientY) {
     if (!el || typeof el.closest !== "function") return null;
@@ -948,7 +942,7 @@ function swipeTarget(el, clientY) {
 
 function beginSwipe(el, id, x, y) {
     if (swipeState) return;
-    clearPendingSwallow();
+    clearClickSuppression();
     const target = swipeTarget(el, y);
     if (!target) return;
     swipeState = { ...target, id, x, y, active: false };
@@ -972,7 +966,7 @@ function endSwipe(id, x, y) {
     const dx = x - state.x;
     const dy = y - state.y;
     if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy) * 1.2) return;
-    swallowClick(state.el);
+    clickSuppressedUntil = Date.now() + 500;
     const step = dx < 0 ? 1 : -1;
     if (state.kind === "zoom") stepZoom(step);
     else stepMedia(state.el, step);
