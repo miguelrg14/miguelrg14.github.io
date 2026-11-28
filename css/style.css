@@ -24,6 +24,19 @@
     --butter: #fff0b3;      /* pastel yellow: link-list highlight */
     --card-gap: 0.9rem;     /* one rhythm for media, title, text and links */
 
+    /* Filter blocks: sky for Category, butter for Tags, one tint per tag group. */
+    --block-sky: #eaf5ff;
+    --block-butter: #fff7dc;
+    --block-sky-edge: #8fc8f5;
+    --block-butter-edge: #e7c567;
+
+    --icon-filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 6h16M7 12h10M10 18h4'/%3E%3C/svg%3E");
+    --icon-search-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23405b7d' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m16 16 4 4'/%3E%3C/svg%3E");
+    --icon-sort: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3'/%3E%3C/svg%3E");
+    --icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+    --icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 6 12 12M18 6 6 18'/%3E%3C/svg%3E");
+
+    /* Each zone keeps its own vivid hue; link glyphs use brand colours instead. */
     --zone-game: #008577;   /* vivid teal: games */
     --zone-code: #4153c8;   /* richer indigo: code */
     --zone-art: #ad6200;    /* vivid amber: art */
@@ -37,8 +50,8 @@ body[data-zone="art"]   { --page-accent: var(--zone-art); }
 body[data-zone="audio"] { --page-accent: var(--zone-audio); }
 body[data-zone] { --page-accent-soft: color-mix(in srgb, var(--page-accent) 14%, var(--surface)); }
 
-/* Each zone keeps its own hue at Home's lightness; a small share of Home's sky
-   keeps the set harmonious. --zone-tray-tint stays stronger for the filter panel. */
+/* Each zone keeps its own pale wash, with a small share of Home's sky.
+   --zone-tray-tint stays stronger for the filter panel. */
 html:has(body[data-zone]) { --zone-bg-pastel: 85%; }
 html:has(body[data-zone="game"])  { --zone-tray-tint: 34%; --scroll-thumb: var(--zone-game); --page-bg: color-mix(in srgb, #dcfaf3 var(--zone-bg-pastel), var(--bg)); }
 html:has(body[data-zone="code"])  { --zone-tray-tint: 34%; --scroll-thumb: var(--zone-code); --page-bg: color-mix(in srgb, #d7d9ff var(--zone-bg-pastel), var(--bg)); }
@@ -84,9 +97,10 @@ html {
     scrollbar-gutter: stable;
 }
 
-/* A modal sheet owns the scroll: the page behind it must stay put. Reserving
-   the gutter above keeps this from shifting the layout when it opens. */
-html:has(dialog[open]) {
+/* A dialog or an open filter owns the scroll: the page behind it stays put.
+   Reserving the gutter above keeps this from shifting the layout when it opens. */
+html:has(dialog[open]),
+html:has(.filter-menu[open]) {
     overflow: hidden;
 }
 
@@ -118,6 +132,7 @@ body {
     --zone-accent-mid: color-mix(in srgb, var(--zone-accent) 85%, black);
     --zone-accent-deep: color-mix(in srgb, var(--zone-accent) 70%, black);
     --zone-accent-soft: color-mix(in srgb, var(--zone-accent) 14%, var(--surface));
+    --footer-accent: var(--page-accent, var(--sky));
     margin: 0;
     min-height: 100vh;
     display: flex;
@@ -319,6 +334,28 @@ main,
     height: 1.15rem;
 }
 
+/* The help control uses the same pill as Share, but with a plain glyph. */
+.header-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--sky) 28%, transparent);
+    color: var(--sky);
+    font: 700 1rem / 1 var(--font);
+    cursor: pointer;
+}
+
+.header-help:hover,
+.header-help:focus-visible {
+    background: color-mix(in srgb, var(--sky) 44%, transparent);
+    color: #fff;
+}
+
 /* The header Contact button should match the size of the nav links. */
 .bar-actions .button.small {
     font-size: 1.05rem;
@@ -410,6 +447,14 @@ main,
     opacity: 1;
 }
 
+/* The router wraps every page in this div; it must be the flex item that grows,
+   so the visible <main> fills the spare height and the footer stays at the end. */
+#route-pages {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
 main {
     flex: 1;
     padding-block: 1.25rem 2.5rem;
@@ -420,14 +465,19 @@ body.home main {
     padding-top: 2.5rem;
 }
 
+/* Full-width band: the footer inherits the page hue without changing its shape. */
+.footer-band {
+    width: 100%;
+    background: color-mix(in srgb, var(--footer-accent) 22%, var(--page-bg, var(--bg)));
+}
+
 .site-footer {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: start;
     gap: 0.75rem 1rem;
     padding-block: 1rem;
-    border-top: 1px solid var(--line);
-    color: var(--muted);
+    color: color-mix(in srgb, var(--footer-accent) 20%, var(--text));
     font-size: var(--step--1);
 }
 
@@ -441,6 +491,15 @@ body.home main {
 
 .site-footer a {
     color: inherit;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-decoration-thickness: 1px;
+    transition: text-decoration-color 0.1s ease-out, text-decoration-thickness 0.1s ease-out;
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+    text-decoration-color: currentColor;
+    text-decoration-thickness: 2px;
 }
 
 .site-footer .icon {
@@ -449,7 +508,7 @@ body.home main {
     height: 0.9rem;
 }
 
-.site-footer a:has(use[href="#github"]) .icon { color: var(--zone-code); }
+.site-footer a:has(use[href="#github"]) .icon { color: #181717; }
 .site-footer a:has(use[href="#mail"]) .icon { color: var(--sky-deep); }
 
 .site-footer .footer-center {
@@ -462,31 +521,8 @@ body.home main {
     justify-content: flex-end;
 }
 
-.site-footer a {
-    position: relative;
-}
-
-/* Same centre-out draw as the navigation, starting after the small icon. */
-.site-footer a::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 0 1.2rem;
-    height: 1px;
-    background-image: linear-gradient(currentColor, currentColor);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 0 100%;
-    transition: background-size 0.1s ease-out;
-    pointer-events: none;
-}
-
-.site-footer a:hover::after,
-.site-footer a:focus-visible::after {
-    background-size: 100% 100%;
-}
-
 .site-footer .footer-share {
-    color: var(--link);
+    color: #0b457d;
     font-weight: 600;
     text-decoration: none;
 }
@@ -697,12 +733,18 @@ body[data-zone] .button[aria-current="page"] {
     height: 1.15rem;
 }
 
-/* Every network keeps its zone colour on Home, Share and Contact. */
-.social a:has(use[href="#linkedin"])  { color: var(--sky-deep); }
-.social a:has(use[href="#github"])    { color: var(--zone-code); }
-.social a:has(use[href="#itch"])      { color: var(--zone-game); }
-.social a:has(use[href="#artstation"]){ color: var(--zone-art); }
-.social a:has(use[href="#soundcloud"]){ color: var(--zone-audio); }
+/* Solid brand glyphs, identical on Home, Share and Contact. */
+.social a:has(use[href="#linkedin"])  { color: #0a66c2; }
+.social a:has(use[href="#itch"])      { color: #fa5c5c; }
+.social a:has(use[href="#github"])    { color: #181717; }
+.social a:has(use[href="#artstation"]){ color: #13aff0; }
+.social a:has(use[href="#soundcloud"]){ color: #ff5500; }
+.social a:has(use[href="#instagram"]) { color: #e1306c; }
+.social a:has(use[href="#youtube"])   { color: #ff0033; }
+
+.about .about-social {
+    margin-top: 1rem;
+}
 
 /* Some symbols have a lot of empty space in their 24×24 viewBox. */
 .social .icon:has(use[href="#soundcloud"]) {
@@ -824,8 +866,33 @@ section + section {
 }
 
 @media (max-width: 36rem) {
+    .knowledge-groups {
+        gap: 0.8rem;
+    }
+
+    /* Three tracks centre the label and let the icon sit beside it. */
     .knowledge-group {
+        display: grid;
+        grid-template-columns: minmax(1.4rem, 1fr) auto minmax(1.4rem, 1fr);
+        align-items: center;
+        column-gap: 0.35rem;
+        row-gap: 0.35rem;
         width: 100%;
+    }
+
+    .knowledge-group > svg {
+        grid-column: 1;
+        justify-self: end;
+    }
+
+    .knowledge-group h3 {
+        grid-column: 2;
+    }
+
+    .knowledge-group ul {
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -1323,19 +1390,6 @@ img[data-media-open]:focus-visible,
     font-size: 0.78rem;
 }
 
-.games .game .role {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-    margin: 0 0 var(--card-gap);
-    padding-left: 0.6rem;
-    border-left: 3px solid var(--sky);
-    font-size: 0.82rem;
-    font-weight: 700;
-    line-height: 1.45;
-}
-
 .games .game .summary {
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -1476,6 +1530,11 @@ img[data-media-open]:focus-visible,
     line-height: 1.45;
 }
 
+/* Clamped contributions keep their full wording in the title tooltip. */
+.role[title] {
+    cursor: help;
+}
+
 :is([data-featured], [data-code]) .card .tags {
     gap: 0.25rem;
     margin-bottom: 0.55rem;
@@ -1494,7 +1553,7 @@ img[data-media-open]:focus-visible,
     font-size: 0.72rem;
 }
 
-/* A single compact row of technologies keeps the card informative but short. */
+/* A single compact row of tags keeps the card informative but short. */
 :is([data-featured], [data-code]) .card .card-tags,
 [data-games] .games .game .card-tags {
     flex-wrap: nowrap;
@@ -1510,6 +1569,18 @@ img[data-media-open]:focus-visible,
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* Tag chips carry a light tint of their own zone, even on mixed shelves. */
+.card[data-zone="game"] .card-tags li,
+.games .game .card-tags li { --card-tag-accent: var(--zone-game); }
+.card[data-zone="code"] .card-tags li { --card-tag-accent: var(--zone-code); }
+.card[data-zone="art"] .card-tags li { --card-tag-accent: var(--zone-art); }
+.card[data-zone="music"] .card-tags li,
+.card[data-zone="audio"] .card-tags li { --card-tag-accent: var(--zone-audio); }
+
+.card-tags li {
+    background: color-mix(in srgb, var(--card-tag-accent, var(--zone-accent)) 16%, var(--surface));
 }
 
 .card-tags .tag-more {
@@ -1554,9 +1625,41 @@ img[data-media-open]:focus-visible,
     margin-bottom: 0;
 }
 
-[data-featured] .zone-card .zone-link {
-    align-self: flex-start;
-    margin-top: 0;
+[data-featured] .zone-item[data-zone="game"]  { --card-accent: var(--zone-game); }
+[data-featured] .zone-item[data-zone="code"]  { --card-accent: var(--zone-code); }
+[data-featured] .zone-item[data-zone="art"]   { --card-accent: var(--zone-art); }
+[data-featured] .zone-item[data-zone="music"],
+[data-featured] .zone-item[data-zone="audio"] { --card-accent: var(--zone-audio); }
+
+/* The zone link is an action under the card, not part of the card itself. */
+[data-featured] .zone-item > .zone-link {
+    position: relative;
+    z-index: 1;
+    align-self: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    border-color: var(--card-accent);
+    background: var(--surface);
+    box-shadow: 0 3px 10px rgb(23 48 79 / 0.14);
+}
+
+[data-featured] .zone-link .zone-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5em;
+    padding: 0 0.35em;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card-accent) 14%, var(--surface));
+    color: var(--card-accent);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+[data-featured] .zone-item > .zone-link:hover,
+[data-featured] .zone-item > .zone-link:focus-visible {
+    border-color: var(--card-accent);
+    background: color-mix(in srgb, var(--card-accent) 12%, var(--surface));
 }
 
 /* ---------- Code page ---------- */
@@ -1577,46 +1680,237 @@ html:has(main:not([hidden]) .filter-bar) {
     scroll-padding-top: calc(var(--bar) + 4.75rem);
 }
 
-/* Keep the external icon on the first filter row while controls wrap inside. */
+/* Keep the tray on a single thin row; long labels truncate instead of wrapping. */
 .filter-controls {
     display: flex;
     flex: 1 1 auto;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
 }
 
 .filter-bar .filter-menu {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
     margin: 0;
 }
 
+/* One icon size for every control in the tray, shrinking with the compact UI. */
+.filter-bar {
+    --filter-icon: 1rem;
+}
+
+.filter-bar .icon {
+    width: var(--filter-icon);
+    height: var(--filter-icon);
+}
+
+/* The external link carries a small arrow badge: it leaves this page. */
 .filter-bar .filter-external {
+    position: relative;
+}
+
+.filter-bar .filter-external .icon-ext {
+    position: absolute;
+    top: 0.05rem;
+    right: 0.05rem;
+    width: calc(var(--filter-icon) * 0.55);
+    height: calc(var(--filter-icon) * 0.55);
+    padding: 1px;
+    border-radius: 50%;
+    background: var(--surface);
+    opacity: 0.9;
+}
+
+.filter-bar .filter-external,
+.filter-bar .filter-shortcut {
     flex: 0 0 auto;
-    align-self: flex-start;
+    align-self: center;
     margin-left: 0;
     padding: 0.4em;
     color: var(--page-accent, var(--sky));
     transition: transform 0.15s;
 }
 
-/* Keep the filter-zone link buttons outlined: only the small lift remains. */
+/* Outbound glyphs keep their network colour even though zones changed. */
+body[data-zone="game"] .filter-bar .filter-external  { color: #fa5c5c; }
+body[data-zone="code"] .filter-bar .filter-external  { color: #181717; }
+body[data-zone="art"] .filter-bar .filter-external   { color: #13aff0; }
+body[data-zone="audio"] .filter-bar .filter-external { color: #ff5500; }
+
+/* All three icon buttons are the same pill; the pair simply sits closer together. */
+.view-switch {
+    display: flex;
+    flex: 0 0 auto;
+    align-self: center;
+    gap: 0.25rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--zone-accent) 14%, var(--surface));
+}
+
 .filter-bar .filter-external:hover,
-.filter-bar .filter-external:focus-visible {
+.filter-bar .filter-external:focus-visible,
+.filter-bar .filter-shortcut:hover,
+.filter-bar .filter-shortcut:focus-visible {
     border-color: var(--line);
     background: var(--surface);
     transform: translateY(-2px);
 }
 
+/* The active shortcut marks which view the shelf is showing. */
+.filter-bar .filter-shortcut[aria-pressed="true"] {
+    border-color: var(--zone-accent);
+    background: var(--zone-accent-soft);
+}
 
-/* A soft zone-coloured tray: enough contrast without drifting far from the sky base. */
-.filter-bar {
-    margin: 0 0 2rem;
-    padding: 0.55rem 0.7rem;
+/* The external link keeps its accent outline in every state. */
+.filter-bar .filter-external,
+.filter-bar .filter-external:hover,
+.filter-bar .filter-external:focus-visible {
+    border-color: var(--page-accent, var(--sky));
+}
+
+/* Menus are controls, not icon actions: softer rectangular pills. */
+.filter-bar .filter-menu > summary {
+    border-radius: var(--radius);
+}
+
+
+/* A soft zone-coloured tray holding the external link, the views and the menus. */
+.filter-tray {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.55rem 0.5rem;
     border: 1px solid color-mix(in srgb, var(--zone-accent) 55%, var(--line));
     border-radius: var(--radius);
     background: color-mix(in srgb, var(--zone-accent) var(--zone-tray-tint, 24%), var(--surface));
+}
+
+/* The outbound link gets its own compartment, with a light island and a divider. */
+.filter-tray .external-slot {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    align-self: center;
+    padding-right: 0.2rem;
+    border-right: 1px solid color-mix(in srgb, var(--zone-accent) 50%, var(--line));
+}
+
+.filter-tray .external-slot .filter-external {
+    background: var(--surface);
+}
+
+.filter-tray .external-slot .filter-external:hover,
+.filter-tray .external-slot .filter-external:focus-visible {
+    background: var(--zone-accent-soft);
+}
+
+/* Compact escape hatch, shown only while a real filter is applied. */
+.filter-bar .filter-clear {
+    flex: 0 0 auto;
+    margin-left: 0;
+    padding: 0.25em 0.6em;
+    font-size: var(--step--2, 0.75rem);
+    color: var(--header);
+}
+
+.filter-bar .filter-clear[hidden] {
+    display: none;
+}
+
+.filter-bar .filter-result {
+    font-size: var(--step--2, 0.75rem);
+    color: var(--header);
+    white-space: nowrap;
+}
+
+.filter-bar .filter-result[hidden] {
+    display: none;
+}
+
+/* Small tray tools: copy the state, undo the last change. */
+.filter-bar .filter-copy,
+.filter-bar .filter-undo {
+    flex: 0 0 auto;
+    margin-left: 0;
+    padding: 0.25em 0.6em;
+    font-size: var(--step--2, 0.75rem);
+    color: var(--muted);
+}
+
+.filter-bar .filter-undo[hidden] {
+    display: none;
+}
+
+/* Panel search and tools sit above the chips without stealing their layout. */
+.filter-search-wrap {
+    display: block;
+    flex: 0 0 100%;
+}
+
+.filter-search {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.35em 0.6em 0.35em 2em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--icon-search-ink) left 0.6em center / 0.95em 0.95em no-repeat, var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.78rem;
+}
+
+.filter-search-empty {
+    flex: 0 0 100%;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.filter-search-empty[hidden] {
+    display: none;
+}
+
+.filter-sheet > .filter-close,
+.filter-sheet > .filter-order {
+    min-width: 1.6rem;
+}
+
+.filter-sheet > .filter-close {
+    justify-self: end;
+}
+
+.filter-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--soundbar-space, 0px) + 1rem);
+    z-index: 120;
+    max-width: min(90vw, 24rem);
+    margin: 0;
+    padding: 0.6em 1em;
+    transform: translateX(-50%);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--header);
+    box-shadow: 0 8px 24px rgb(9 20 35 / 0.2);
+    color: #fff;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+/* Empty combinations stay visible but are not clickable dead ends. */
+.filter-menu .filters button[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.filter-menu .filters button[aria-disabled="true"]:hover {
+    border-color: var(--line);
 }
 
 .filter-menu {
@@ -1628,18 +1922,24 @@ html:has(main:not([hidden]) .filter-bar) {
     background: var(--surface);
 }
 
-/* Inline layout keeps every word visible in browsers that hide flex <summary> children. */
+/* Inline flex keeps the label, value and caret on one line at every width. */
 .filter-menu > summary {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
     width: fit-content;
-    padding: 0.45em 0.9em;
+    min-width: 0;
+    max-width: 8.5rem;
+    padding: 0.32em 0.6em;
+    overflow: hidden;
     border: 2px solid var(--line);
     border-radius: 999px;
     background: var(--surface);
     color: var(--text);
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     font-weight: 700;
     line-height: 1.2;
+    white-space: nowrap;
     cursor: pointer;
     list-style: none;
     /* No background transition: opening must never show white text on white. */
@@ -1647,7 +1947,25 @@ html:has(main:not([hidden]) .filter-bar) {
 }
 
 .filter-menu > summary > * {
+    flex: 0 0 auto;
     vertical-align: middle;
+}
+
+.combined-filters > summary::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 0.95em;
+    height: 0.95em;
+    margin-inline-end: 0.35em;
+    background: currentColor;
+    -webkit-mask: var(--icon-filter) center / contain no-repeat;
+    mask: var(--icon-filter) center / contain no-repeat;
+}
+
+.filter-menu > summary [data-category-status],
+.filter-menu > summary [data-filter-status],
+.filter-menu > summary [data-filter-summary] {
+    flex: 0 1 auto;
 }
 
 .filter-menu > summary .menu-label {
@@ -1689,8 +2007,8 @@ html:has(main:not([hidden]) .filter-bar) {
     color: #fff;
 }
 
-/* Category opens to the left; technology opens to the right. */
-.group-filters[open] .filters {
+/* Both menus open inside the tray, whichever one is active. */
+.filter-menu[open] .filter-sheet {
     left: 0;
     right: auto;
 }
@@ -1706,27 +2024,42 @@ html:has(main:not([hidden]) .filter-bar) {
 .filter-menu > summary::after {
     content: "\25BE";
     display: inline-block;
-    margin-inline-start: 0.35rem;
-    font-size: 0.75rem;
+    flex: 0 0 auto;
+    margin-inline-start: 0.25rem;
+    font-size: 0.7rem;
+    line-height: 1;
     transition: transform 0.15s;
 }
 
 .filter-menu[open] {
+    position: static;
     z-index: 5;
+}
+
+.filter-menu[open] > summary {
+    max-width: none;
+    overflow: visible;
 }
 
 .filter-menu[open] > summary::after {
     transform: rotate(180deg);
 }
 
-.filter-menu[open] .filters {
+/* The panel is a child of the tray's layout, so it can never float outside it. */
+.filter-menu[open] .filter-sheet {
     position: absolute;
     top: calc(100% + 0.5rem);
-    right: 0;
+    left: 0;
+    right: auto;
     z-index: 5;
-    width: max-content;
-    min-width: 18rem;
-    max-width: min(90vw, 26rem);
+    box-sizing: border-box;
+    width: min(26rem, 100%);
+    min-width: 0;
+    max-width: 100%;
+    max-height: min(85dvh, 36rem);
+    overflow-y: auto;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: contain;
     padding: 0.75rem;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -1735,19 +2068,139 @@ html:has(main:not([hidden]) .filter-bar) {
 }
 
 .filter-menu [data-category-status],
-.filter-menu [data-filter-status] {
+.filter-menu [data-filter-status],
+.filter-menu [data-filter-summary] {
     display: inline-block;
+    max-width: 4.5rem;
     margin-inline-start: 0.25rem;
     padding: 0 0.5em;
+    overflow: hidden;
     border-radius: 999px;
     background: var(--page-accent-soft, var(--sky-soft));
     color: var(--text);
     font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .filter-menu[open] [data-category-status],
-.filter-menu[open] [data-filter-status] {
+.filter-menu[open] [data-filter-status],
+.filter-menu[open] [data-filter-summary] {
+    max-width: none;
+    overflow: visible;
     background: var(--surface);
+    white-space: normal;
+}
+
+/* The idle chip keeps its space (and accessible name) but stays visually quiet. */
+.filter-menu [data-idle="true"] {
+    opacity: 0;
+}
+
+/* One sheet holds both sections and one shared set of tools. */
+.filter-sheet {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.28rem 0.35rem;
+    align-content: start;
+}
+
+.filter-sheet::before {
+    grid-column: 1 / -1;
+    grid-row: 1;
+}
+
+.filter-sheet > .filter-order {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+}
+
+.filter-sheet > .filter-reset {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+}
+
+.filter-sheet > .filter-close {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.filter-sheet > .filter-order::before,
+.filter-sheet > .filter-close::before {
+    content: "";
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    margin-inline-end: 0.3em;
+    background: currentColor;
+    -webkit-mask: var(--icon-sort) center / contain no-repeat;
+    mask: var(--icon-sort) center / contain no-repeat;
+    vertical-align: -0.1em;
+}
+
+.filter-sheet > .filter-close::before {
+    -webkit-mask-image: var(--icon-close);
+    mask-image: var(--icon-close);
+    margin-inline-end: 0;
+}
+
+.filter-sheet > .filter-order[data-order="recent"]::before {
+    -webkit-mask-image: var(--icon-clock);
+    mask-image: var(--icon-clock);
+}
+
+.filter-sheet > .filter-search-wrap,
+.filter-sheet > .filter-search-empty,
+.filter-sheet > .filter-section {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+/* Two tinted cards make Category and Tags read as separate decisions at a glance. */
+.filter-sheet > .filter-section {
+    padding: 0.25rem 0.35rem 0.3rem;
+    border: 1px solid var(--line);
+    border-left-width: 3px;
+    border-radius: 0.6rem;
+}
+
+.filter-sheet > .group-filters {
+    border-color: var(--block-sky-edge);
+    border-left-color: var(--sky-deep);
+    background: var(--block-sky);
+}
+
+.filter-sheet > .tag-filters {
+    border-color: var(--block-butter-edge);
+    border-left-color: #b8871a;
+    background: var(--block-butter);
+}
+
+.filter-sheet > .filter-section .filters > legend {
+    width: auto;
+    margin: 0 0 0.2rem;
+    color: var(--header);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.filter-sheet > .filter-section .filters > legend::before {
+    content: "";
+    display: inline-block;
+    width: 0.5em;
+    height: 0.5em;
+    margin-inline-end: 0.4em;
+    border-radius: 50%;
+    background: var(--sky-deep);
+    vertical-align: 0.05em;
+}
+
+.filter-sheet > .tag-filters .filters > legend::before {
+    background: #b8871a;
 }
 
 .filter-menu .filters {
@@ -1759,20 +2212,98 @@ html:has(main:not([hidden]) .filter-bar) {
     margin: 0;
 }
 
+/* One button scale for category chips, tag chips and the panel tools. */
 .filter-menu .filters button {
-    padding: 0.28em 0.7em;
+    min-height: 1.6rem;
+    padding: 0.22em 0.55em;
     border-width: 1px;
-    font-size: 0.8rem;
+    font-size: 0.74rem;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
+/* Tag chips are filed under the same headings as the Toolbox. */
+.filter-menu .filters.grouped-tags {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(7rem, 22vw, 9rem)), 1fr));
+    align-content: start;
+    gap: 0.24rem;
+}
+
+.grouped-tags > legend {
+    grid-column: 1 / -1;
+}
+
+.filter-menu .filters .tag-group {
+    --tag-ink: var(--header);
+    --tag-tint: var(--sky-soft);
+    display: flex;
+    flex-wrap: wrap;
+    align-content: start;
+    gap: 0.18rem;
+    min-width: 0;
+    padding: 0.18rem 0.25rem 0.22rem;
+    border: 1px solid color-mix(in srgb, var(--tag-ink) 20%, var(--surface));
+    border-left: 3px solid var(--tag-ink);
+    border-radius: 0.45rem;
+    background: color-mix(in srgb, var(--tag-tint) 55%, var(--surface));
+}
+
+.filter-menu .filters .tag-group[data-tag-theme="sky"] {
+    --tag-ink: #0b5f9e;
+    --tag-tint: #d9edff;
+}
+
+.filter-menu .filters .tag-group[data-tag-theme="mint"] {
+    --tag-ink: #1f6b4f;
+    --tag-tint: #d9f3e8;
+}
+
+/* Amber is deliberately deeper than the Tags card's cream, so it never blends. */
+.filter-menu .filters .tag-group[data-tag-theme="amber"] {
+    --tag-ink: #8a4b00;
+    --tag-tint: #ffd6a0;
+}
+
+.filter-menu .filters .tag-group[data-tag-theme="lilac"] {
+    --tag-ink: #5a3d8a;
+    --tag-tint: #ece3ff;
+}
+
+.filter-menu .filters .tag-group[hidden] {
+    display: none;
+}
+
+.filter-menu .filters .tag-group-title {
+    flex: 0 0 100%;
+    margin: 0;
+    color: var(--tag-ink);
+    font-size: 0.64rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+/* A quiet inset badge reads as part of the option, not as loose text. */
 .filter-menu .count {
-    margin-left: 0.25em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.3em;
+    margin-left: 0.35em;
+    padding: 0.05em 0.35em;
+    border-radius: 999px;
+    background: rgb(9 20 35 / 0.07);
     color: var(--muted);
-    font-weight: 600;
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1.3;
 }
 
 .filter-menu button[aria-pressed="true"] .count {
-    color: var(--text);
+    background: rgb(255 255 255 / 0.22);
+    color: #fff;
 }
 
 .filters {
@@ -1784,12 +2315,15 @@ html:has(main:not([hidden]) .filter-bar) {
     border: 0;
 }
 
-.filters legend {
+.filters legend:not(.visually-hidden) {
     width: 100%;
     margin-bottom: 0.5rem;
     color: var(--muted);
 }
 
+.filter-sheet > .filter-close,
+.filter-sheet > .filter-order,
+.filter-sheet > .filter-reset,
 .filters button {
     padding: 0.35em 0.9em;
     border: 2px solid var(--line);
@@ -1801,8 +2335,22 @@ html:has(main:not([hidden]) .filter-bar) {
     cursor: pointer;
 }
 
+.filter-sheet > .filter-close:hover,
+.filter-sheet > .filter-order:hover,
 .filters button:hover {
     border-color: var(--page-accent, var(--sky));
+}
+
+/* Panel tools share the chip metrics after the base button rule. */
+.filter-sheet > .filter-close,
+.filter-sheet > .filter-order,
+.filter-sheet > .filter-reset {
+    min-height: 1.6rem;
+    padding: 0.22em 0.55em;
+    border-width: 1px;
+    font-size: 0.74rem;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .filters button[aria-pressed="true"] {
@@ -1822,7 +2370,115 @@ body[data-zone] .filters button[aria-pressed="true"],
 }
 
 .group-filters button[aria-pressed="true"] .count {
-    color: rgb(255 255 255 / 0.8);
+    color: #fff;
+}
+
+/* Grouped changes the layout, not the selection: keep it on its own row. */
+.filter-menu .filters .category-chips,
+.filter-menu .filters .category-view {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.filter-menu .filters .category-view {
+    margin-top: 0.1rem;
+    padding-top: 0.28rem;
+    border-top: 1px solid var(--block-sky-edge);
+}
+
+.filter-menu .filters .category-chips[hidden],
+.filter-menu .filters .category-view[hidden] {
+    display: none;
+}
+
+.filter-menu .filters .category-view-label {
+    color: var(--muted);
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.filter-menu .filters .category-view button {
+    border-color: var(--sky-deep);
+    background: transparent;
+    color: var(--sky-deep);
+}
+
+.filter-menu .filters .category-view button[aria-pressed="true"] {
+    border-color: var(--sky-deep);
+    background: var(--sky-deep);
+    color: #fff;
+}
+
+/* A selected tag keeps its group's colour, so a choice stays traceable. */
+.filter-menu .filters .tag-group button[aria-pressed="true"] {
+    background: var(--tag-ink);
+    border-color: var(--tag-ink);
+    color: #fff;
+}
+
+.filter-menu .filters .tag-group button[aria-pressed="true"] .count {
+    background: rgb(255 255 255 / 0.22);
+    color: #fff;
+}
+
+/* Resets are actions, not choices: square-ish, navy outline, no pastel fill. */
+.filter-menu .filters button[data-reset],
+.filter-bar .filter-clear[data-reset],
+.filter-sheet > .filter-reset[data-reset],
+.empty .empty-reset {
+    border-style: solid;
+    border-color: var(--header);
+    border-radius: 0.45rem;
+    background: transparent;
+    color: var(--header);
+}
+
+.filter-menu .filters button[data-reset]::before,
+.filter-bar .filter-clear[data-reset]::before,
+.filter-sheet > .filter-reset[data-reset]::before,
+.empty .empty-reset::before {
+    content: "↺";
+    margin-inline-end: 0.25em;
+    font-size: 0.9em;
+    line-height: 1;
+}
+
+.filter-menu .filters button[data-reset][aria-pressed="true"] {
+    background: transparent;
+    color: var(--header);
+}
+
+.filter-menu .filters button[data-reset][aria-pressed="true"] .count {
+    background: rgb(23 48 79 / 0.08);
+    color: var(--header);
+}
+
+/* Hover or focus fills the action with navy and flips the ink. */
+.filter-menu .filters button[data-reset]:is(:hover, :focus-visible),
+.filter-bar .filter-clear[data-reset]:is(:hover, :focus-visible),
+.filter-sheet > .filter-reset[data-reset]:is(:hover, :focus-visible):not(:disabled),
+.empty .empty-reset:is(:hover, :focus-visible) {
+    border-color: var(--header);
+    background: var(--header);
+    color: #fff;
+}
+
+.filter-menu .filters button[data-reset]:is(:hover, :focus-visible) .count {
+    background: rgb(255 255 255 / 0.2);
+    color: #fff;
+}
+
+/* Disabled keeps a readable muted ink instead of fading into the panel. */
+.filter-sheet > .filter-reset:disabled {
+    border-color: var(--line);
+    color: var(--muted);
+    cursor: default;
 }
 
 .group[hidden] {
@@ -2005,14 +2661,20 @@ body[data-zone] .filters button[aria-pressed="true"],
     margin: 0;
 }
 
+/* The viewer takes the slide's own shape, so square covers fill the screen
+   instead of sitting inside a 16:9 frame with a blurred letterbox. */
 .image-lightbox {
+    --media-ratio: 1.7778;
+    --media-max-w: 80rem;
+    --media-max-h: 46rem;
     position: fixed;
     display: flex;
     flex-direction: column;
-    width: min(94vw, 80rem);
-    height: min(calc(94vw * 9 / 16), 94vh, 46rem);
-    height: min(calc(94vw * 9 / 16), 94dvh, 46rem);
-    max-width: min(94vw, 80rem);
+    width: min(94vw, calc(94vh * var(--media-ratio)), calc(var(--media-max-h) * var(--media-ratio)), var(--media-max-w));
+    width: min(94vw, calc(94dvh * var(--media-ratio)), calc(var(--media-max-h) * var(--media-ratio)), var(--media-max-w));
+    height: min(94vh, calc(94vw / var(--media-ratio)), calc(var(--media-max-w) / var(--media-ratio)), var(--media-max-h));
+    height: min(94dvh, calc(94vw / var(--media-ratio)), calc(var(--media-max-w) / var(--media-ratio)), var(--media-max-h));
+    max-width: 94vw;
     max-height: 94vh;
     max-height: 94dvh;
     overflow: hidden;
@@ -2031,15 +2693,9 @@ body[data-zone] .filters button[aria-pressed="true"],
     background: rgb(23 48 79 / 0.75);
 }
 
+/* No blurred frame: the viewer is sized to the image, so nothing shows around it. */
 .image-lightbox .lightbox-backdrop {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    background-position: center;
-    background-size: cover;
-    filter: blur(18px) brightness(0.7) saturate(1.1);
-    transform: scale(1.06);
-    pointer-events: none;
+    display: none;
 }
 
 .image-lightbox .lightbox-stage {
@@ -2125,6 +2781,13 @@ body[data-zone] .filters button[aria-pressed="true"],
     color: #fff;
     cursor: pointer;
     transition: background 0.15s;
+}
+
+.image-lightbox .lightbox-close::before {
+    content: "";
+    position: absolute;
+    inset: -0.4rem;
+    border-radius: inherit;
 }
 
 .image-lightbox .lightbox-close:hover,
@@ -2232,9 +2895,97 @@ body[data-zone] .filters button[aria-pressed="true"],
     background: rgb(23 48 79 / 0.75);
 }
 
-.dialog-pager {
+/* Compact shortcut card; it shares the dark backdrop with the other sheets. */
+.help-dialog {
+    width: min(92vw, 30rem);
+    max-height: 90vh;
+    max-height: 90dvh;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--header) 26%, transparent);
+    overflow: auto;
+}
+
+.help-dialog::backdrop {
+    background: rgb(23 48 79 / 0.75);
+}
+
+.help-content {
+    padding: 1.25rem;
+}
+
+.help-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.help-head h2 {
+    margin: 0;
+    font-size: var(--step-1);
+}
+
+.help-close {
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.help-close:hover,
+.help-close:focus-visible {
+    border-color: var(--header);
+    background: var(--sky-soft);
+}
+
+.help-list {
+    display: grid;
+    gap: 0.55rem;
+    margin: 1rem 0 0;
+}
+
+.help-list > div {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    gap: 0.2rem 1rem;
+}
+
+.help-list dt {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.help-list dd {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--step--1);
+}
+
+.dialog-tools {
     grid-column: 2;
     grid-row: 1;
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: 0.5rem;
+}
+
+.dialog-copy {
+    white-space: nowrap;
+}
+
+.dialog-pager {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2321,6 +3072,7 @@ body[data-zone] .filters button[aria-pressed="true"],
 }
 
 .dialog-close {
+    position: relative;
     display: grid;
     place-items: center;
     width: 2.25rem;
@@ -2332,6 +3084,14 @@ body[data-zone] .filters button[aria-pressed="true"],
     color: #fff;
     cursor: pointer;
     transition: background 0.15s;
+}
+
+/* The disc stays small, but its tap target reaches the surrounding corners. */
+.dialog-close::before {
+    content: "";
+    position: absolute;
+    inset: -0.4rem;
+    border-radius: inherit;
 }
 
 .dialog-close svg {
@@ -2357,13 +3117,12 @@ body[data-zone] .filters button[aria-pressed="true"],
 
 
 
-/* Reserve the tallest title block so the pager never shifts between projects. */
+/* The heading fits its content: no empty band under a title without a role. */
 .dialog-heading {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 1rem;
-    min-height: 6.875rem;
     padding: 1.15rem 1.5rem 0.25rem;
 }
 
@@ -2372,7 +3131,7 @@ body[data-zone] .filters button[aria-pressed="true"],
 }
 
 .dialog-heading .meta {
-    margin: 0 0 0.3rem;
+    margin: 0.3rem 0 0;
     color: var(--card-accent);
     font-size: 0.9rem;
     font-weight: 800;
@@ -2384,12 +3143,82 @@ body[data-zone] .filters button[aria-pressed="true"],
     line-height: 1.15;
 }
 
-.dialog-heading .role {
-    margin: 0.4rem 0 0;
+.dialog-overview .role {
+    margin: 0.9rem 0 0;
     padding-left: 0.75rem;
     border-left: 3px solid var(--sky);
     font-size: 0.9rem;
-    font-weight: 700;
+    font-weight: 600;
+}
+
+.dialog-overview .role .role-label {
+    color: var(--muted);
+    font-weight: 800;
+}
+
+/* Tags in the sheet are real filters, not just labels. */
+.dialog-tags li {
+    padding: 0;
+}
+
+.dialog-tag {
+    padding: 0.1em 0.6em;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.dialog-tag[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--card-accent, var(--zone-accent)) 26%, var(--surface));
+    color: var(--card-accent, var(--zone-accent));
+    font-weight: 800;
+}
+
+.dialog-tag:hover,
+.dialog-tag:focus-visible {
+    background: color-mix(in srgb, var(--card-accent, var(--zone-accent)) 28%, var(--surface));
+}
+
+.dialog-related {
+    margin: -0.5rem 1.5rem 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+}
+
+.dialog-related ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.related-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25em 0.6em;
+    border: 1px solid color-mix(in srgb, var(--card-accent, var(--zone-accent)) 45%, var(--line));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card-accent, var(--zone-accent)) 10%, var(--surface));
+    color: var(--text);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.related-link:hover,
+.related-link:focus-visible {
+    background: color-mix(in srgb, var(--card-accent, var(--zone-accent)) 24%, var(--surface));
+}
+
+.related-link .icon {
+    width: 0.9em;
+    height: 0.9em;
+    color: var(--card-accent, var(--zone-accent));
 }
 
 /* Compact sky-tinted pills close the sheet after the project information. */
@@ -2402,19 +3231,29 @@ body[data-zone] .filters button[aria-pressed="true"],
 }
 
 .dialog-links .actions > li {
-    flex: 0 0 6.25rem;
+    flex: 1 1 5.5rem;
+    max-width: 8rem;
     min-width: 0;
 }
 
 .dialog-links .button {
     justify-content: center;
     width: 100%;
+    min-width: 0;
     min-height: 2rem;
     padding: 0.3rem 0.5rem;
+    overflow: hidden;
     border-width: 1px;
     border-color: color-mix(in srgb, var(--card-accent) 55%, var(--line));
     background: color-mix(in srgb, var(--card-accent) 10%, var(--surface));
     font-size: 0.8rem;
+}
+
+.dialog-link-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dialog-links .button:hover {
@@ -2428,7 +3267,7 @@ body[data-zone] .filters button[aria-pressed="true"],
     color: var(--card-accent);
 }
 
-/* A short overview on the left; technology and extras get their own column. */
+/* A short overview on the left; tags and extras get their own column. */
 .dialog-body {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
@@ -2608,7 +3447,7 @@ body[data-zone] .filters button[aria-pressed="true"],
         padding: 1rem 1.25rem 0.5rem;
     }
 
-    .dialog-pager {
+    .dialog-tools {
         grid-column: 1;
         grid-row: 1;
         justify-self: end;
@@ -2623,7 +3462,8 @@ body[data-zone] .filters button[aria-pressed="true"],
     }
 
     .dialog-links,
-    .dialog-player-block {
+    .dialog-player-block,
+    .dialog-related {
         margin-inline: 1.25rem;
     }
 
@@ -2750,14 +3590,13 @@ body[data-zone] .filters button[aria-pressed="true"],
     position: fixed;
     inset: auto 0 1rem;
     z-index: 80;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto minmax(8rem, 34rem) auto auto;
-    grid-template-areas: "cover info controls progress time close";
+    /* One row at every width: track, play + seek, then volume on the right. */
+    display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 0.6rem;
     width: min(calc(100% - 2 * var(--gutter)), var(--wrap));
     margin-inline: auto;
-    padding: 0.7rem 1rem;
+    padding: 0.5rem 0.8rem;
     border: 1px solid var(--card-accent, var(--zone-accent));
     border-radius: 1rem;
     background: var(--surface);
@@ -2776,12 +3615,50 @@ body[data-zone] .filters button[aria-pressed="true"],
     display: none;
 }
 
-.soundbar-cover-link { grid-area: cover; }
-.soundbar-info { grid-area: info; }
-.soundbar-controls { grid-area: controls; }
-.soundbar-seek { grid-area: progress; }
-.soundbar-time { grid-area: time; justify-self: end; }
-.soundbar-close { grid-area: close; }
+.soundbar-track {
+    display: flex;
+    flex: 0 1 18rem;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.soundbar-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.soundbar-center {
+    display: flex;
+    flex: 1 1 20rem;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.soundbar-progress-row {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.soundbar-progress-row .soundbar-seek {
+    flex: 1 1 auto;
+}
+
+.soundbar-extra {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.soundbar-player {
+    display: none;
+}
 
 /* The page scrolls under the floating player, so it reserves the measured
    height. The sheet always keeps the same clearance, with or without music. */
@@ -2800,9 +3677,9 @@ body:has(> .soundbar:not([hidden])) {
 }
 
 .soundbar-cover {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.45rem;
     object-fit: cover;
 }
 
@@ -2905,8 +3782,9 @@ body:has(> .soundbar:not([hidden])) {
 
 .soundbar-controls {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.2rem;
 }
 
 .soundbar-skip,
@@ -2920,8 +3798,8 @@ body:has(> .soundbar:not([hidden])) {
 }
 
 .soundbar-skip {
-    width: 2rem;
-    height: 2rem;
+    width: 1.6rem;
+    height: 1.6rem;
     background: transparent;
     color: var(--muted);
 }
@@ -2936,20 +3814,20 @@ body:has(> .soundbar:not([hidden])) {
 }
 
 .soundbar-skip .icon {
-    width: 1.05rem;
-    height: 1.05rem;
+    width: 0.85rem;
+    height: 0.85rem;
 }
 
 .soundbar-toggle {
-    width: 2.6rem;
-    height: 2.6rem;
+    width: 2rem;
+    height: 2rem;
     background: var(--card-accent, var(--zone-accent));
     color: #fff;
 }
 
 .soundbar-toggle .icon {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 0.9rem;
+    height: 0.9rem;
 }
 
 .soundbar-toggle .soundbar-pause,
@@ -3044,8 +3922,8 @@ body:has(> .soundbar:not([hidden])) {
 .soundbar-mute {
     display: grid;
     place-items: center;
-    width: 1.7rem;
-    height: 1.7rem;
+    width: 1.5rem;
+    height: 1.5rem;
     padding: 0;
     border: 0;
     border-radius: 50%;
@@ -3070,7 +3948,7 @@ body:has(> .soundbar:not([hidden])) {
 
 .soundbar-volume-range {
     --track-accent: var(--card-accent, var(--zone-accent));
-    width: 4.5rem;
+    width: 3.5rem;
     min-width: 0;
     height: 1rem;
     margin: 0;
@@ -3122,13 +4000,13 @@ body:has(> .soundbar:not([hidden])) {
 .soundbar-close {
     display: grid;
     place-items: center;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.5rem;
+    height: 1.5rem;
     padding: 0;
     border: 0;
     background: none;
     color: var(--muted);
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     line-height: 1;
     cursor: pointer;
 }
@@ -3139,12 +4017,16 @@ body:has(> .soundbar:not([hidden])) {
 
 @media (max-width: 52rem) {
     .soundbar {
-        grid-template-columns: auto minmax(0, 1fr) auto auto;
-        grid-template-areas:
-            "cover info controls close"
-            "progress progress progress time";
-        gap: 0.45rem 0.8rem;
-        padding: 0.6rem 0.8rem;
+        gap: 0.4rem;
+        padding: 0.45rem 0.6rem;
+    }
+
+    .soundbar-track {
+        flex-basis: 12rem;
+    }
+
+    .soundbar-center {
+        flex-basis: 14rem;
     }
 
     .soundbar-progress {
@@ -3152,11 +4034,7 @@ body:has(> .soundbar:not([hidden])) {
     }
 
     .soundbar-volume-range {
-        width: 3.5rem;
-    }
-
-    .soundbar-time {
-        padding-left: 0.4rem;
+        width: 2.8rem;
     }
 
     .soundbar.needs-resume [data-sound-meta] {
@@ -3165,58 +4043,90 @@ body:has(> .soundbar:not([hidden])) {
 }
 
 @media (max-width: 30rem) {
+    .soundbar {
+        gap: 0.3rem;
+        padding: 0.4rem 0.45rem;
+    }
+
+    .soundbar-track {
+        flex-basis: 6rem;
+        gap: 0.35rem;
+    }
+
+    .soundbar-center {
+        flex-basis: 8rem;
+        gap: 0.3rem;
+    }
+
     .soundbar-skip {
         display: none;
     }
 
     .soundbar-cover {
-        width: 2.5rem;
-        height: 2.5rem;
+        width: 2rem;
+        height: 2rem;
     }
 
     .soundbar-toggle {
-        width: 2.3rem;
-        height: 2.3rem;
+        width: 1.9rem;
+        height: 1.9rem;
+    }
+
+    .soundbar-toggle .icon {
+        width: 0.85rem;
+        height: 0.85rem;
     }
 
     .soundbar-volume-range {
-        width: 2.8rem;
+        width: 2.2rem;
+    }
+
+    .soundbar-time {
+        font-size: 0.72rem;
     }
 }
 
 @media (max-width: 24rem) {
     /* At the narrowest widths the artwork would starve the title and close button. */
     .soundbar {
-        grid-template-columns: minmax(0, 1fr) auto auto;
-        grid-template-areas:
-            "info controls close"
-            "progress progress time";
+        gap: 0.2rem;
+        padding: 0.35rem 0.35rem;
     }
 
     .soundbar-cover-link {
         display: none;
     }
 
+    .soundbar-toggle {
+        width: 1.8rem;
+        height: 1.8rem;
+    }
+
     .soundbar-volume-range {
-        width: 2.3rem;
+        width: 1.8rem;
+    }
+
+    .soundbar-time {
+        display: none;
     }
 
     .soundbar-title {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .soundbar-meta {
-        font-size: 0.72rem;
+        font-size: 0.7rem;
     }
 }
 
 @media (max-width: 30rem) {
     .audio-grid {
-        gap: 0.6rem;
+        gap: 0.9rem;
     }
 
+    /* Square covers stay full width too; two per row made them unreadable. */
     .audio-grid > * {
-        flex-basis: calc((100% - 0.6rem) / 2);
+        flex-basis: 100%;
     }
 }
 
@@ -3624,6 +4534,72 @@ main:has(.share-card) {
     }
 }
 
+@media (max-width: 48rem) {
+    /* Copy link is secondary once the tray shares a narrow viewport. */
+    .filter-bar .filter-copy {
+        display: none;
+    }
+
+    /* Keep summaries fixed-width while open so the tools never leave the bar. */
+    .filter-menu[open] > summary {
+        max-width: 10rem;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .filter-menu[open] [data-category-status],
+    .filter-menu[open] [data-filter-status],
+    .filter-menu[open] [data-filter-summary] {
+        max-width: 4rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    html:has(.filter-menu[open]) .filter-bar {
+        z-index: 100;
+    }
+
+    .filter-menu[open]::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 101;
+        background: rgb(9 20 35 / 0.45);
+    }
+
+    /* A bottom sheet keeps every choice on screen, whatever the summary width. */
+    .filter-menu[open] .filter-sheet {
+        position: fixed;
+        inset: auto 0 0;
+        z-index: 102;
+        box-sizing: border-box;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        max-height: 85dvh;
+        overflow: auto;
+        overscroll-behavior: contain;
+        padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+        border-bottom: 0;
+        border-radius: 1rem 1rem 0 0;
+        box-shadow: 0 -12px 32px rgb(9 20 35 / 0.25);
+        transform: none !important;
+    }
+
+    /* The full selection is still readable inside the sheet, not in the bar. */
+    .filter-menu[open] .filter-sheet:not([data-full-status-idle="true"])::before {
+        content: attr(data-full-status);
+        display: block;
+        flex: 0 0 100%;
+        margin: -0.15rem 0 0.45rem;
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+}
+
 @media (max-width: 36.5rem) {
     /* One-line bar: brand + Contact + menu button; links open below on demand. */
     .bar {
@@ -3657,6 +4633,13 @@ main:has(.share-card) {
     .header-share .icon {
         width: 1rem;
         height: 1rem;
+    }
+
+    /* Help matches the Share pill once the header goes compact. */
+    .header-help {
+        width: 1.9rem;
+        height: 1.9rem;
+        font-size: 0.9rem;
     }
 
     .nav-toggle {
@@ -3697,38 +4680,209 @@ main:has(.share-card) {
         font-size: 1rem;
     }
 
-    /* Compact menus: both pills stay side by side at the narrowest width. */
+    /* Keep a visible breath between the link, the switch and the menus. */
     .filter-bar,
+    .filter-tray {
+        gap: 0.35rem;
+    }
+
     .filter-controls {
         gap: 0.2rem;
     }
 
-    .filter-bar .filter-external {
+    /* Icons follow the compact pills instead of staying at desktop size. */
+    .filter-bar {
+        --filter-icon: 0.9rem;
+    }
+
+    .filter-bar .filter-external,
+    .filter-bar .filter-shortcut {
         padding: 0.2em;
     }
 
-    .filter-menu > summary {
+    /* Small glyphs, but a comfortable tap target on every icon button. */
+    .filter-bar .filter-external,
+    .filter-bar .filter-shortcut,
+    .filter-bar .filter-clear,
+    .filter-bar .filter-copy,
+    .filter-bar .filter-undo {
+        min-width: 1.55rem;
+        min-height: 1.55rem;
+        padding: 0.2em;
+    }
+
+    .filter-bar .filter-clear,
+    .filter-bar .filter-copy {
+        gap: 0;
+    }
+
+    .filter-bar .filter-clear-label,
+    .filter-bar .filter-copy-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .view-switch {
         gap: 0.2rem;
-        padding: 0.32em 0.5em;
-        font-size: 0.78rem;
+    }
+
+    /* Copy link is secondary here; Ctrl+Z and the menu tools remain available. */
+    .filter-bar .filter-copy {
+        display: none;
+    }
+
+    /* Cat / Tags keep one line; the value truncates until the menu opens. */
+    .filter-bar .filter-menu > summary {
+        max-width: 6.5rem;
+        padding: 0.28em 0.4em;
+        font-size: 0.75rem;
     }
 
     .filter-menu > summary::after {
         font-size: 0.65rem;
     }
 
-    /* The filter name stays visible at every width; only spacing tightens. */
     .filter-menu .menu-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    .filter-menu .menu-label-short {
         display: inline;
     }
 
-    .filter-menu .filters button {
-        padding: 0.3em 0.6em;
-        font-size: 0.78rem;
+    /* The unified button has one short word, so its label never hides. */
+    .filter-menu.combined-filters .menu-label {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip-path: none;
     }
 
+    .filter-menu [data-category-status],
+    .filter-menu [data-filter-status],
+    .filter-menu [data-filter-summary] {
+        min-width: 0;
+        max-width: 2.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .filter-menu [data-idle="true"] {
+        width: 0;
+        max-width: 0;
+        margin-inline-start: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .filter-menu[open] > summary {
+        max-width: 6.5rem;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .filter-menu[open] [data-category-status],
+    .filter-menu[open] [data-filter-status],
+    .filter-menu[open] [data-filter-summary] {
+        max-width: 2.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .filter-menu .filters button {
+        padding: 0.22em 0.55em;
+        font-size: 0.74rem;
+    }
+
+    /* Counts stay readable on phones; only their type is smaller. */
     .filter-menu .count {
+        font-size: 0.68rem;
+    }
+}
+
+@media (max-width: 22rem) {
+    /* The whole sheet fits without scrolling even at the smallest widths. */
+    .filter-menu[open] .filter-sheet {
+        max-height: 85dvh;
+        gap: 0.2rem 0.35rem;
+        padding: 0.6rem 0.6rem calc(0.6rem + env(safe-area-inset-bottom));
+    }
+
+    /* Keep the tag grid on the same rhythm without shrinking its padding. */
+    .filter-menu .filters.grouped-tags {
+        gap: 0.2rem 0.35rem;
+    }
+
+    /* Two narrow columns keep every tag in view instead of stacking four. */
+    .filter-menu .filters.grouped-tags {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .filter-menu .filters.grouped-tags button {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .filter-menu .filters .tag-group {
+        gap: 0.15rem;
+        padding-top: 0;
+    }
+
+    .filter-menu .filters .tag-group-title {
+        font-size: 0.6rem;
+        line-height: 1.1;
+    }
+
+    /* Even tighter labels and no external icon at the smallest widths. */
+    .filter-bar .filter-menu > summary {
+        max-width: 5.5rem;
+    }
+
+    .filter-menu [data-category-status],
+    .filter-menu [data-filter-status],
+    .filter-menu [data-filter-summary] {
+        max-width: 1.5rem;
+    }
+
+    .filter-tray .external-slot {
         display: none;
+    }
+}
+
+@media (max-width: 22rem) {
+    /* Help and Contact turn into icon-only pills before the one-line bar overflows. */
+    .header-help {
+        width: 1.9rem;
+        height: 1.9rem;
+    }
+
+    .bar-actions {
+        gap: 0.4rem;
+    }
+
+    .bar-actions .button.small {
+        width: 1.9rem;
+        height: 1.9rem;
+        justify-content: center;
+        padding: 0;
+        font-size: 0;
+    }
+
+    .bar-actions .button.small .icon {
+        width: 1rem;
+        height: 1rem;
     }
 }
 
@@ -3737,15 +4891,45 @@ main:has(.share-card) {
     .header-share {
         display: none;
     }
+
+    .filter-menu [data-category-status],
+    .filter-menu [data-filter-status],
+    .filter-menu [data-filter-summary] {
+        max-width: 1rem;
+    }
+
+    /* Three icon buttons need a hair more room on the tiniest screens. */
+    .filter-bar,
+    .filter-tray {
+        gap: 0.25rem;
+    }
+
+    .filter-controls {
+        gap: 0.15rem;
+    }
+
+    .filter-bar {
+        --filter-icon: 0.8rem;
+    }
+
+    /* At the narrowest width the arrow would crowd the pill: colour still marks it. */
+    .filter-bar .filter-external .icon-ext {
+        display: none;
+    }
+
+    .view-switch {
+        gap: 0.125rem;
+    }
 }
 
 @media (max-width: 30rem) {
     .gallery {
-        gap: 0.6rem;
+        gap: 0.9rem;
     }
 
+    /* Art matches Code and Games: one readable card per row on a phone. */
     .gallery > * {
-        flex-basis: calc((100% - 0.6rem) / 2);
+        flex-basis: 100%;
     }
 }
 
@@ -3870,17 +5054,72 @@ main:has(.share-card) {
 }
 
 @media (max-width: 30rem) {
-    .filter-menu[open] .filters {
-        width: min(90vw, 18rem);
+    /* The filter bar outranks the player while a sheet is open. */
+    html:has(.filter-menu[open]) .filter-bar {
+        z-index: 100;
+    }
+
+    .filter-menu[open]::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: 101;
+        background: rgb(9 20 35 / 0.45);
+    }
+
+    /* A bottom sheet gives both menus room for counts and search on a phone. */
+    .filter-menu[open] .filter-sheet {
+        position: fixed;
+        inset: auto 0 0;
+        z-index: 102;
+        width: auto;
+        max-width: none;
         min-width: 0;
+        max-height: 85dvh;
+        overflow: auto;
+        overscroll-behavior: contain;
+        padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+        border-bottom: 0;
+        border-radius: 1rem 1rem 0 0;
+        box-shadow: 0 -12px 32px rgb(9 20 35 / 0.25);
+        transform: none !important;
     }
 
-    .filter-bar {
-        padding: 0.4rem 0.35rem;
+    /* The tag sheet keeps the same spacing as the category sheet. */
+    .filter-menu .filters.grouped-tags {
+        gap: 0.3rem;
     }
 
-    .filter-bar .filter-controls {
+    .filter-menu .filters .tag-group {
+        gap: 0.2rem;
+        padding-top: 0.15rem;
+    }
+
+    .filter-tray {
+        padding: 0.4rem 0.1rem;
+    }
+
+    .filter-tray .external-slot {
+        padding-right: 0.1rem;
+    }
+
+    .filter-tray .filter-controls {
         gap: 0.35rem;
+    }
+
+    /* Long active labels truncate inside the controls instead of wrapping. */
+    .filter-bar .filter-menu {
+        max-width: 100%;
+    }
+
+    .filter-bar .filter-menu > summary {
+        max-width: 6rem;
+    }
+
+    /* The count and undo are redundant here: chips show counts, Ctrl+Z undoes. */
+    .filter-bar .filter-result,
+    .filter-bar .filter-undo {
+        display: none;
     }
 
     /* Keep the icon beside the title while both side tracks stay equal. */

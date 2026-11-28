@@ -24,11 +24,12 @@ for (const [key, file] of pages) {
   if (!main) throw new Error(`No main in ${file}`);
   out[key] = { title, meta, html: main[1] };
 }
+const generated = '// Generated from the page <main> blocks for file:// navigation.\n'
+  + '// Regenerate with: node tools/build-pages.js\n'
+  + 'window.SITE_PAGES = ' + JSON.stringify(out, null, 2) + ';\n';
 fs.writeFileSync(
   path.join(root, 'js/pages.js'),
-  '// Generated from the page <main> blocks for file:// navigation.\n'
-    + '// Regenerate with: node tools/build-pages.js\n'
-    + 'window.SITE_PAGES = ' + JSON.stringify(out, null, 2) + ';\n',
+  generated.replace(/\n/g, '\r\n'),
   'utf8'
 );
 console.log(Object.entries(out).map(([key, value]) => `${key}: ${value.html.length} chars`).join('\n'));

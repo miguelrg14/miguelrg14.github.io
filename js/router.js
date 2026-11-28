@@ -79,6 +79,8 @@
   const currentKey = servedPage?.key || "home";
   let activeKey = currentKey;
   const routePages = {};
+  // main.js uses the cached pages to count the items on each shelf.
+  window.__routePages = routePages;
   // Links clicked before the preload finishes wait here instead of reloading.
   let markReady;
   const ready = new Promise((resolve) => { markReady = resolve; });
@@ -160,6 +162,7 @@
     applyRoot(document.body, isFile ? initialRoot : page.root);
 
     document.documentElement.dataset.root = page.root;
+    document.documentElement.dataset.page = page.key;
     document.body.classList.toggle("home", page.key === "home");
     if (page.zone) document.body.dataset.zone = page.zone;
     else document.body.removeAttribute("data-zone");
@@ -172,6 +175,7 @@
     markNav(page);
 
     document.querySelectorAll("dialog[open]").forEach((dialog) => dialog.close());
+    document.querySelectorAll(".filter-menu[open]").forEach((menu) => { menu.open = false; });
     window.scrollTo(0, 0);
     window.dispatchEvent(new Event("scroll"));
     window.dispatchEvent(new CustomEvent("routechange", { detail: { page: page.key } }));
